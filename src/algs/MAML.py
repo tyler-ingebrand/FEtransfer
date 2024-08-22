@@ -60,9 +60,7 @@ class MAML(torch.nn.Module):
         for layer in self.model:
             if isinstance(layer, torch.nn.Linear):
                 W_copy, b_copy = copied_parameters[linear_layer_index]
-                W_sum = layer.weight + W_copy
-                b_sum = layer.bias + b_copy
-                xs = torch.einsum("fmn,fdn->fdm", W_sum, xs) + b_sum.unsqueeze(1)
+                xs = torch.einsum("fmn,fdn->fdm", W_copy, xs) + b_copy.unsqueeze(1)
                 linear_layer_index += 1
             else:
                 xs = layer(xs)
@@ -84,7 +82,7 @@ class MAML(torch.nn.Module):
                 params.append((W_copy, b_copy))
 
         # next, we will update the models based on the examples via gradient descent for some number of gradient steps
-        learning_rate = 1e-3 # if self.n_maml_update_steps == 1 else 1e-5
+        learning_rate = 1e-4
         for _ in range(self.n_maml_update_steps):
             # compute loss
             y_example_hats = self.forward_pass_copied_model(example_xs, params)
@@ -92,10 +90,6 @@ class MAML(torch.nn.Module):
 
             # back prop, retain graph so we can compute the gradient of the loss w.r.t. the parameters
             grads = torch.autograd.grad(loss, [p for p2 in params for p in p2], create_graph=True)
-
-            # gradient normalization is necessary for MAML
-            # norm = torch.norm(torch.tensor([g.flatten().norm() for g in grads], device=grads[0].device))
-            # grads = [g / norm for g in grads]
 
             # update the parameters by hand, since torch  is not meant for this.
             for i in range(len(params)):
