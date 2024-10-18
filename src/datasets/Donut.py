@@ -77,13 +77,13 @@ class GaussianDonutDataset(BaseDataset):
 
 
 def get_donut_datasets(device, n_examples):
+    train = GaussianDonutDataset(device=device,
+                                 n_examples_per_sample=n_examples)
     type1 = GaussianDonutDataset(device=device,
                                  n_examples_per_sample=n_examples)
     type2 = GaussianDonutDataset(device=device,
                                  n_examples_per_sample=n_examples)
     type3 = GaussianDonutDataset(device=device,
                                  n_examples_per_sample=n_examples)
-    type4 = GaussianDonutDataset(device=device,
-                                 n_examples_per_sample=n_examples)
 
-    return type1, type2, type3, type4
+    return train, type1, type2, type3

@@ -14,7 +14,6 @@ class PolynomialDataset(BaseDataset):
                  C_range,
                  D_range,
                  input_range,
-                 device,
                  **kwargs):
         super().__init__(input_size=(1,),
                          output_size=(1,),
@@ -22,7 +21,6 @@ class PolynomialDataset(BaseDataset):
                          total_n_samples_per_function=float('inf'),
                          n_functions_per_sample=10,
                          n_points_per_sample=1_000,
-                         device=device,
                          data_type="deterministic",
                          **kwargs)
 
@@ -70,6 +68,13 @@ class PolynomialDataset(BaseDataset):
         return example_xs, example_ys, xs, ys, info
 
 def get_polynomial_datasets(device, n_examples):
+    train = PolynomialDataset(A_range=(0, 0),
+                              B_range=(-3, 3),
+                              C_range=(-3, 3),
+                              D_range=(-3, 3),
+                              input_range=(-5, 5),
+                              device=device,
+                              n_examples_per_sample=n_examples)
     type1 = PolynomialDataset(A_range=(0, 0),
                               B_range=(-3, 3),
                               C_range=(-3, 3),
@@ -78,27 +83,20 @@ def get_polynomial_datasets(device, n_examples):
                               device=device,
                               n_examples_per_sample=n_examples)
     type2 = PolynomialDataset(A_range=(0, 0),
-                              B_range=(-3, 3),
-                              C_range=(-3, 3),
-                              D_range=(-3, 3),
-                              input_range=(-5, 5),
-                              device=device,
-                              n_examples_per_sample=n_examples)
-    type3 = PolynomialDataset(A_range=(0, 0),
                               B_range=(-10, 10),
                               C_range=(-10, 10),
                               D_range=(-10, 10),
                               input_range=(-5, 5),
                               device=device,
                               n_examples_per_sample=n_examples)
-    type4 = PolynomialDataset(A_range=(-3, 3),
+    type3 = PolynomialDataset(A_range=(-3, 3),
                               B_range=(-3, 3),
                               C_range=(-3, 3),
                               D_range=(-3, 3),
                               input_range=(-5, 5),
                               device=device,
                               n_examples_per_sample=n_examples)
-    return type1, type2, type3, type4
+    return train, type1, type2, type3
 
 
 def plot_polynomial(xs, ys, y_hats, example_xs, example_ys, save_dir, type_i, info):
@@ -122,5 +120,5 @@ def plot_polynomial(xs, ys, y_hats, example_xs, example_ys, save_dir, type_i, in
             ax.legend()
 
     plt.tight_layout()
-    plt.savefig(f"{save_dir}/type{type_i}.png")
+    plt.savefig(f"{save_dir}/type{type_i+1}.png")
     plt.clf()

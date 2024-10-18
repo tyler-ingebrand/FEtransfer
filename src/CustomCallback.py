@@ -8,6 +8,7 @@ from FunctionEncoder.Callbacks.BaseCallback import BaseCallback
 
 from src.algs.MAML import MAML
 from src.algs.Oracle import Oracle
+from src.algs.generic_function_space_methods import _distance
 
 
 class CustomCallback(BaseCallback):
@@ -33,6 +34,8 @@ class CustomCallback(BaseCallback):
         self.data_type = data_type
 
     def on_training_start(self, locals: dict):
+        if self.prefix == "type2" and self.data_type == "categorical":
+            return # skip type2 for categorical data, since a linear combination of distributions does not happen very often.
         if self.total_epochs == 0 and self.testing_dataset is not None:
             # with torch.no_grad():
                 # get model and data
@@ -40,26 +43,31 @@ class CustomCallback(BaseCallback):
                 example_xs, example_ys, xs, ys, info = self.testing_dataset.sample()
 
                 # test and log
-                tag, loss = self.eval(model, example_xs, example_ys, xs, ys, info)
-                self.tensorboard.add_scalar(tag, loss, self.total_epochs)
+                to_log = self.eval(model, example_xs, example_ys, xs, ys, info)
+                for tag, value in to_log.items():
+                    self.tensorboard.add_scalar(tag, value, self.total_epochs)
                 self.total_epochs += 1
 
     def on_step(self, locals:dict):
+        if self.prefix == "type2" and self.data_type == "categorical":
+            return # skip type2 for categorical data, since a linear combination of distributions does not happen very often.
+
         # with torch.no_grad():
-            model = locals["self"]
+        model = locals["self"]
 
-            # sample testing data
-            if self.testing_dataset is not None:
-                example_xs, example_ys, xs, ys, info = self.testing_dataset.sample()
-            else:
-                example_xs, example_ys, xs, ys, info = locals["example_xs"], locals["example_ys"], locals["xs"], locals["ys"], locals["_"]
+        # sample testing data
+        if self.testing_dataset is not None:
+            example_xs, example_ys, xs, ys, info = self.testing_dataset.sample()
+        else:
+            example_xs, example_ys, xs, ys, info = locals["example_xs"], locals["example_ys"], locals["xs"], locals["ys"], locals["_"]
 
-            # test
-            tag, loss = self.eval(model, example_xs, example_ys, xs, ys, info)
+        # test
+        to_log = self.eval(model, example_xs, example_ys, xs, ys, info)
 
-            # log results
-            self.tensorboard.add_scalar(tag, loss, self.total_epochs)
-            self.total_epochs += 1
+        # log results
+        for tag, value in to_log.items():
+            self.tensorboard.add_scalar(tag, value, self.total_epochs)
+        self.total_epochs += 1
 
 
 
@@ -70,9 +78,9 @@ class CustomCallback(BaseCallback):
 
         # eval models
         if type(model) == Oracle:
-            y_hats = model.predict_from_examples(example_xs, example_ys, xs, info=info, method="least_squares")
+            y_hats = model.predict_from_examples(example_xs, example_ys, xs, info=info)
         else:
-            y_hats = model.predict_from_examples(example_xs, example_ys, xs, method="least_squares")
+            y_hats = model.predict_from_examples(example_xs, example_ys, xs, method=model.method if isinstance(model, FunctionEncoder) else None)
 
         # reenable grads and dropout
         if not isinstance(model, MAML):
@@ -80,10 +88,26 @@ class CustomCallback(BaseCallback):
 
         # measure mse
         if self.data_type == "deterministic":
-            loss = model._distance(y_hats, ys, squared=True).mean()
-            return f"{self.prefix}/mean_distance_squared", loss
+            loss = _distance(y_hats, ys, data_type=self.data_type, squared=True).mean()
+            return {f"{self.prefix}/mean_distance_squared": loss}
         elif self.data_type == "stochastic":
-            loss = model._distance(y_hats, ys, squared=True).mean()
-            return f"{self.prefix}/mean_distance_squared", loss
+            loss = _distance(y_hats, ys, data_type=self.data_type, squared=True).mean()
+            return {f"{self.prefix}/mean_distance_squared": loss}
+        elif self.data_type == "categorical":
+            # distance loss
+            loss = _distance(y_hats, ys, data_type=self.data_type, squared=True).mean()
+
+            # accuracy - What fraction of the time the probability of the correct class is greater than the probability of the incorrect class
+            true_class = ys.argmax(dim=-1)
+            estimated_class = y_hats.argmax(dim=-1)
+            accuracy = (true_class == estimated_class).float().mean()
+
+            # cross entropy
+            cross_entropy = torch.nn.CrossEntropyLoss()(y_hats.reshape(-1, 2), true_class.reshape(-1))
+
+            return {f"{self.prefix}/mean_distance_squared": loss,
+                    f"{self.prefix}/accuracy": accuracy,
+                    f"{self.prefix}/cross_entropy": cross_entropy
+                    }
         else:
             raise NotImplementedError("Only deterministic data is supported")
