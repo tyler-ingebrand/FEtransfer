@@ -22,7 +22,7 @@ def load_args(args):
 
 def check_args(args):
     acceptable_algs = ["FE", "AE", "Transformer", "TFE", "Oracle", "BF", "BFB", "MAML1", "MAML5", "LS", "IP", "TransformerWithPositions"]
-    acceptable_datasets = ["Polynomial", "Donut", "CIFAR", "Categorical", "7Scenes"]
+    acceptable_datasets = ["Polynomial", "Donut", "CIFAR", "Categorical", "7Scenes", "Ant"]
     assert args.n_basis >=1, f"n_basis must be at least 1, got {args.n_basis}"
     assert args.n_examples >= 1, f"n_examples must be at least 1, got {args.n_examples}"
     assert args.epochs >= 1, f"epochs must be at least 1, got {args.epochs}"
