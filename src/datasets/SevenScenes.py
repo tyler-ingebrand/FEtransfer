@@ -11,6 +11,10 @@ from matplotlib import pyplot as plt
 
 
 def download_datasets():
+    # img size after reshaping
+    img_size = (40, 30)
+
+
     # fetch location of current file
     current_file = os.path.abspath(__file__)
     current_dir = os.path.dirname(current_file)
@@ -55,7 +59,7 @@ def download_datasets():
                 subsubdir = os.path.join(subdir, file.replace(".zip", ""))
                 os.system(f"rm {os.path.join(subdir, subsubdir, '*depth*')}  > /dev/null")
 
-                # next load all images, resize them to 160x120, then save them as a tensor
+                # next load all images, resize them, then save them as a tensor
                 # at the same time, process the labels for consistency
                 images = os.listdir(subsubdir)
                 images = [image for image in images if image.endswith(".color.png")]
@@ -73,10 +77,10 @@ def download_datasets():
 
                     # resize image
                     image = Image.open(image_path)
-                    image = image.resize((160, 120), resample=Resampling.BILINEAR)
+                    image = image.resize(img_size, resample=Resampling.BOX)
 
                     # convert to tensor
-                    image = torch.tensor(image.getdata()).reshape(120, 160, 3)
+                    image = torch.tensor(image.getdata()).reshape(img_size[1], img_size[0], 3)
                     image = image.permute(2, 0, 1).float() / 255.0
 
                     # load label, convert to tensor
@@ -113,11 +117,10 @@ class SevenScenesDataset(BaseDataset):
                  **kwargs):
         assert split in ["train", "test"], "split must be 'train' or 'test'"
 
-        super().__init__(input_size=(3,120,160),
+        super().__init__(input_size=(3,30,40),
                          output_size=(3,), # (16,),
                          total_n_functions=50, # possible scenes including train test and heldout
                          total_n_samples_per_function=1000,
-                         n_functions_per_sample=10,
                          n_points_per_sample=200,
                          data_type="deterministic",
                          **kwargs)
@@ -292,11 +295,11 @@ class SevenScenesDataset(BaseDataset):
 
 
 
-def get_7scenes_datasets(device, n_examples):
-    train = SevenScenesDataset(device=device, n_examples_per_sample=n_examples, split="train", heldout=False)
-    type1 = SevenScenesDataset(device=device, n_examples_per_sample=n_examples, split="test", heldout=False)
+def get_7scenes_datasets(device, n_examples, n_functions):
+    train = SevenScenesDataset(device=device, n_examples_per_sample=n_examples, split="train", heldout=False, n_functions_per_sample=n_functions)
+    type1 = SevenScenesDataset(device=device, n_examples_per_sample=n_examples, split="test", heldout=False, n_functions_per_sample=n_functions)
     type2 = None  # no linear combinations of distributions
-    type3 = SevenScenesDataset(device=device, n_examples_per_sample=n_examples, heldout=True)
+    type3 = SevenScenesDataset(device=device, n_examples_per_sample=n_examples, heldout=True, n_functions_per_sample=n_functions)
     return train, type1, type2, type3
 
 def plot_7scenes(xs, ys, y_hats, example_xs, example_ys, save_dir, type_i, info):

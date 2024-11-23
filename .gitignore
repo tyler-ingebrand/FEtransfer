@@ -164,6 +164,7 @@ cython_debug/
 
 
 logs/
+*logs*/
 data/
 src/datasets/7ScenesData/
 src/datasets/MuJoCo/

@@ -136,6 +136,7 @@ class TransformerWithPositions(BaseAlg):
         # interleave the encodings, so that the transformer can use the positional information
         example_encodings = torch.stack([encoding_example_xs, encoding_example_ys], dim=2).reshape(encoding_example_xs.shape[0], -1, encoding_example_xs.shape[-1])
         example_encodings += self.positional_encoding(torch.arange(example_encodings.shape[1], device=example_encodings.device))
+        raise Exception("TODO this isnt correct. This allows the transformer to attend to query points, which have exploitable correlations. ")
 
         # forward pass
         output_embedding = self.transformer(example_encodings, encoding_xs)

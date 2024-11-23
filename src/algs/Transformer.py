@@ -57,7 +57,7 @@ class Transformer(BaseAlg):
         num_params = 0
 
         if model_type == "CNN":
-            num_params += CNN.predict_number_params(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=2, hidden_size=model_kwargs["hidden_size"])
+            num_params += CNN.predict_number_params(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=4, hidden_size=model_kwargs["hidden_size"])
             input_size = (model_kwargs["hidden_size"],)
 
         # encoder examples
@@ -93,7 +93,7 @@ class Transformer(BaseAlg):
 
         # conv net if needed
         if model_type == "CNN":
-            self.conv = CNN(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=2, hidden_size=model_kwargs["hidden_size"])
+            self.conv = CNN(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=4, hidden_size=model_kwargs["hidden_size"])
             input_size = (model_kwargs["hidden_size"],)
         self.transformer = torch.nn.Transformer(d_model=n_basis,
                                                 nhead=nheads,
@@ -109,6 +109,7 @@ class Transformer(BaseAlg):
                                             *self.encoder_examples.parameters(),
                                             *self.encoder_prediction.parameters(),
                                             *self.decoder.parameters()], lr=1e-3)
+        self.d_model = n_basis
 
     def predict_from_examples(self,
                 example_xs: torch.tensor, # F x B1 x N size
@@ -121,11 +122,22 @@ class Transformer(BaseAlg):
             example_xs = self.conv(example_xs)
             xs = self.conv(xs)
 
+        # encode inputs
         examples = torch.cat((example_xs, example_ys), dim=2) # F x B1 x (N + M) size
         example_encodings = self.encoder_examples(examples) # F x B1 x D size
         input_encodings = self.encoder_prediction(xs) # F x B1 x D size
 
         # forward pass
-        output_embedding = self.transformer(example_encodings, input_encodings)
+        # we need to reshape. Otherwise, the transformer can attend all of the query points.
+        # the query points are designed to be independent, so this would be cheating.
+        reshaped_input_encodings = input_encodings.view(-1, 1, input_encodings.shape[-1])
+        reshaped_example_encodings = example_encodings.unsqueeze(1).repeat(1, xs.shape[1], 1, 1)
+        reshaped_example_encodings = reshaped_example_encodings.view(-1, example_xs.shape[1], self.d_model)
+
+        # pass through transformer
+        output_embedding = self.transformer(reshaped_example_encodings, reshaped_input_encodings)
+        output_embedding = output_embedding.view(xs.shape[0], xs.shape[1], self.d_model)
+
+        # decode outputs
         output = self.decoder(output_embedding)
         return output

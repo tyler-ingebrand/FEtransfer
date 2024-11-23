@@ -3,13 +3,19 @@ import os
 import time
 from datetime import datetime
 from typing import Dict, Optional, Tuple
+
+import ffmpeg
 import numpy as np
 import gymnasium as gym
 import argparse
 
 import torch
 from FunctionEncoder import BaseDataset
+from gymnasium.spaces import Box
+from matplotlib import pyplot as plt
+from stable_baselines3 import PPO
 from tqdm import trange
+import cv2
 
 # automatically add the bin path
 os.environ['LD_LIBRARY_PATH'] = os.environ.get('LD_LIBRARY_PATH', '') + ':' + os.path.expanduser('~/.mujoco/mujoco210/bin')
@@ -24,7 +30,7 @@ class VariableAntEnv(gym.Env):
     def default_dynamics_variable_ranges():
         leg_lengths = (0.2 **2 + 0.2**2)**0.5
         ankle_lengths = (0.4 **2 + 0.4**2)**0.5
-        gear = 150
+        gear = 60
         return {
             "front_left_leg_length": (leg_lengths, leg_lengths),
             "front_left_foot_length":(ankle_lengths, ankle_lengths),
@@ -55,7 +61,7 @@ class VariableAntEnv(gym.Env):
         self.env_kwargs = env_kwargs
         self.env_kwargs["terminate_when_unhealthy"] = False
         self.env_kwargs["exclude_current_positions_from_observation"] = False
-        self.env_kwargs["include_cfrc_ext_in_observation"] = False
+        # self.env_kwargs["use_contact_forces"] = False
 
         self.render_mode = env_kwargs.get('render_mode', None)
         self.dynamics_variable_ranges = dynamics_variable_ranges
@@ -67,9 +73,10 @@ class VariableAntEnv(gym.Env):
                 self.dynamics_variable_ranges[k] = v
 
         # placeholder variable
-        self.env =  gym.make('Ant-v5', *self.env_args, **self.env_kwargs)
+        self.env =  gym.make('Ant-v3', *self.env_args, **self.env_kwargs)
         self.action_space = self.env.action_space
-        self.observation_space = self.env.observation_space
+        # self.observation_space = self.env.observation_space[:29]
+        self.observation_space = Box(low=self.env.observation_space.low[:29], high=self.env.observation_space.high[:29], dtype=self.env.observation_space.dtype)
 
         # path to write xml to
         current_date_time = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -126,17 +133,17 @@ class VariableAntEnv(gym.Env):
             # create xml file for these parameters
             path = self.create_xml_file(front_left_leg_length, front_left_foot_length, front_right_leg_length, front_right_foot_length, back_left_leg_length, back_left_foot_length, back_right_leg_length, back_right_foot_length, front_left_gear, front_right_gear, back_left_gear, back_right_gear, front_left_ankle_gear, front_right_ankle_gear, back_left_ankle_gear, back_right_ankle_gear,)
             self.current_dynamics_dict = current_dynamics_dict
-            self.env = gym.make('Ant-v5', xml_file=path, *self.env_args, **self.env_kwargs)
+            self.env = gym.make('Ant-v3', xml_file=path, *self.env_args, **self.env_kwargs)
 
         # return observation
         state, info = self.env.reset()
         info["dynamics"] = self.current_dynamics_dict
-        return state, info
+        return state[:29], info
 
     def step(self, action):
         next_state, reward, terminated, truncated, info = self.env.step(action)
         info["dynamics"] = self.current_dynamics_dict
-        return next_state, reward, terminated, truncated, info
+        return next_state[:29], reward, terminated, truncated, info
 
     def render(self):
         return self.env.render()
@@ -248,33 +255,38 @@ class VariableAntEnv(gym.Env):
         ant_env = self.env.env.env.env
         qpos, qvel = ant_env.data.qpos, ant_env.data.qvel
         obs = ant_env._get_obs()
-        return obs, (qpos, qvel)
+        return obs[:29], (qpos, qvel)
+
+
+
+
+# generate train and type1 parameter ranges
+train_type1_parameters = {}
+default_sizes = VariableAntEnv.default_dynamics_variable_ranges()
+for k, v in default_sizes.items():
+    if "length" in k:
+        train_type1_parameters[k] = (v[0]*0.5, v[1]*1.5)
+    else:
+        train_type1_parameters[k] = (v[0]*1.0, v[1]*1.0)
+# type 2 will be linear combinations of these parameter dynamics (not the parameters themselves)
+
+# generate type3 parameter ranges
+train_type3_parameters = {}
+for k, v in default_sizes.items():
+    train_type3_parameters[k] = (v[0]*2, v[1]*2.5)
+
+
+
+
+
+
 
 
 def visualize():
     foot_min, foot_max = ANKLE_LENGTH / 2, ANKLE_LENGTH * 1.5
     leg_min, leg_max = LEG_LENGTH, LEG_LENGTH * 1.5
     gear_min, gear_max = 60, 60
-    hps = {
-        "front_left_leg_length": (leg_min, leg_max),
-        "front_left_foot_length": (foot_min, foot_max),
-        "front_right_leg_length": (leg_min, leg_max),
-        "front_right_foot_length": (foot_min, foot_max),
-        "back_left_leg_length": (leg_min, leg_max),
-        "back_left_foot_length": (foot_min, foot_max),
-        "back_right_leg_length": (leg_min, leg_max),
-        "back_right_foot_length": (foot_min, foot_max),
-
-        "front_left_gear": (gear_min, gear_max),
-        "front_right_gear": (gear_min, gear_max),
-        "back_left_gear": (gear_min, gear_max),
-        "back_right_gear": (gear_min, gear_max),
-        "front_left_ankle_gear": (gear_min, gear_max),
-        "front_right_ankle_gear": (gear_min, gear_max),
-        "back_left_ankle_gear": (gear_min, gear_max),
-        "back_right_ankle_gear": (gear_min, gear_max),
-
-    }
+    hps = train_type1_parameters
     env = VariableAntEnv(hps, render_mode='human')
     env2 = VariableAntEnv(hps, render_mode='human')
     env2.reset()
@@ -283,6 +295,7 @@ def visualize():
         for _ in range(10_000):
             if _ % 100 == 0:
                 env.close()
+                env2.close()
                 obs, info = env.reset()
 
             # copy state over
@@ -298,80 +311,34 @@ def visualize():
             n_obs2, r, term, trunc, info = env2.step(env.action_space.sample())
 
             # see if we can mimic the state
-            # print(obs)
-            # print(obs2)
-            # print()
-            # print(n_obs)
-            # print(n_obs2)
             env2.render()
     except KeyboardInterrupt:
         pass
     env.close()
     env2.close()
 
-def collect_type1_data(num_functions, params) -> dict:
+def collect_type1_data(num_functions, params, episode_length=1000, n_examples=200) -> dict:
     # create env
     assert params in ["type1", "type3"]
     if params == "type1":
-        foot_min, foot_max = ANKLE_LENGTH / 2, ANKLE_LENGTH * 1.5
-        leg_min, leg_max = LEG_LENGTH, LEG_LENGTH * 1.5
-        gear_min, gear_max = 60, 120
-        hps = {
-            "front_left_leg_length": (leg_min, leg_max),
-            "front_left_foot_length": (foot_min, foot_max),
-            "front_right_leg_length": (leg_min, leg_max),
-            "front_right_foot_length": (foot_min, foot_max),
-            "back_left_leg_length": (leg_min, leg_max),
-            "back_left_foot_length": (foot_min, foot_max),
-            "back_right_leg_length": (leg_min, leg_max),
-            "back_right_foot_length": (foot_min, foot_max),
-
-            "front_left_gear": (gear_min, gear_max),
-            "front_right_gear": (gear_min, gear_max),
-            "back_left_gear": (gear_min, gear_max),
-            "back_right_gear": (gear_min, gear_max),
-            "front_left_ankle_gear": (gear_min, gear_max),
-            "front_right_ankle_gear": (gear_min, gear_max),
-            "back_left_ankle_gear": (gear_min, gear_max),
-            "back_right_ankle_gear": (gear_min, gear_max),
-
-        }
+        hps = train_type1_parameters
     else:
-        foot_min, foot_max = ANKLE_LENGTH * 1.5, ANKLE_LENGTH * 2
-        leg_min, leg_max = LEG_LENGTH * 1.5, LEG_LENGTH * 2
-        gear_min, gear_max = 120, 160
-        hps = {
-            "front_left_leg_length": (leg_min, leg_max),
-            "front_left_foot_length": (foot_min, foot_max),
-            "front_right_leg_length": (leg_min, leg_max),
-            "front_right_foot_length": (foot_min, foot_max),
-            "back_left_leg_length": (leg_min, leg_max),
-            "back_left_foot_length": (foot_min, foot_max),
-            "back_right_leg_length": (leg_min, leg_max),
-            "back_right_foot_length": (foot_min, foot_max),
+        hps = train_type3_parameters
+    env = VariableAntEnv(hps, render_mode="rgb_array")
 
-            "front_left_gear": (gear_min, gear_max),
-            "front_right_gear": (gear_min, gear_max),
-            "back_left_gear": (gear_min, gear_max),
-            "back_right_gear": (gear_min, gear_max),
-            "front_left_ankle_gear": (gear_min, gear_max),
-            "front_right_ankle_gear": (gear_min, gear_max),
-            "back_left_ankle_gear": (gear_min, gear_max),
-            "back_right_ankle_gear": (gear_min, gear_max),
-        }
-    env = VariableAntEnv(hps)
+    # create a video of the environment
 
     # init data buffers
-    states = np.zeros((num_functions, 1000, env.observation_space.shape[0]))
-    actions = np.zeros((num_functions, 1000, env.action_space.shape[0]))
-    next_states = np.zeros((num_functions, 1000, env.observation_space.shape[0]))
+    states = np.zeros((num_functions, episode_length, env.observation_space.shape[0]))
+    actions = np.zeros((num_functions, episode_length, env.action_space.shape[0]))
+    next_states = np.zeros((num_functions, episode_length, env.observation_space.shape[0]))
     hidden_params = np.zeros((num_functions, len(hps)))
 
     # collect data
     for episode in trange(num_functions):
         state, info = env.reset()
         hidden_params[episode] = np.array([info["dynamics"][k] for k in hps.keys()])
-        for step in range(1000):
+        for step in range(episode_length):
             # step env
             action = env.action_space.sample()
             next_state, reward, terminated, truncated, info = env.step(action)
@@ -389,10 +356,12 @@ def collect_type1_data(num_functions, params) -> dict:
     # the goal is to predict the next state from the current state.
     all_xs = np.concatenate([states, actions], axis=-1)
     all_ys = next_states
-    example_xs = all_xs[:, :200]
-    example_ys = all_ys[:, :200]
-    xs = all_xs[:, 200:]
-    ys = all_ys[:, 200:]
+
+    # take first section to be examples
+    example_xs = all_xs[:, :n_examples]
+    example_ys = all_ys[:, :n_examples]
+    xs = all_xs[:, n_examples:]
+    ys = all_ys[:, n_examples:]
 
     # create torch dict and return
     results = {"example_xs": example_xs, "example_ys": example_ys, "xs": xs, "ys": ys, "hidden_params": hidden_params}
@@ -400,47 +369,26 @@ def collect_type1_data(num_functions, params) -> dict:
     return results
 
 
-def collect_type2_data(num_functions) -> dict:
+def collect_type2_data(num_functions, episode_length=1000, n_examples=200) -> dict:
     # default params
-    foot_min, foot_max = ANKLE_LENGTH * 1.5, ANKLE_LENGTH * 2
-    leg_min, leg_max = LEG_LENGTH * 1.5, LEG_LENGTH * 2
-    gear_min, gear_max = 120, 160
-    hps = {
-        "front_left_leg_length": (leg_min, leg_max),
-        "front_left_foot_length": (foot_min, foot_max),
-        "front_right_leg_length": (leg_min, leg_max),
-        "front_right_foot_length": (foot_min, foot_max),
-        "back_left_leg_length": (leg_min, leg_max),
-        "back_left_foot_length": (foot_min, foot_max),
-        "back_right_leg_length": (leg_min, leg_max),
-        "back_right_foot_length": (foot_min, foot_max),
-
-        "front_left_gear": (gear_min, gear_max),
-        "front_right_gear": (gear_min, gear_max),
-        "back_left_gear": (gear_min, gear_max),
-        "back_right_gear": (gear_min, gear_max),
-        "front_left_ankle_gear": (gear_min, gear_max),
-        "front_right_ankle_gear": (gear_min, gear_max),
-        "back_left_ankle_gear": (gear_min, gear_max),
-        "back_right_ankle_gear": (gear_min, gear_max),
-    }
-
+    hps = train_type1_parameters
 
     # we will be taking a synthetic linear combination of these two environments.
     env = VariableAntEnv(hps)
     env2 = VariableAntEnv(hps)
 
     # init data buffers
-    states = np.zeros((num_functions, 1000, env.observation_space.shape[0]))
-    actions = np.zeros((num_functions, 1000, env.action_space.shape[0]))
-    next_states = np.zeros((num_functions, 1000, env.observation_space.shape[0]))
+    states = np.zeros((num_functions, episode_length, env.observation_space.shape[0]))
+    actions = np.zeros((num_functions, episode_length, env.action_space.shape[0]))
+    next_states = np.zeros((num_functions, episode_length, env.observation_space.shape[0]))
     hidden_params = np.zeros((num_functions, 2, len(hps)))
     weights = np.zeros((num_functions, 2))
 
     # collect data
     for episode in trange(num_functions):
-        # sample values between -2 and 2 to take a linear combination of the two environments.
-        alpha, beta = np.random.uniform(-2, 2, 2)
+        # sample values between 0 and 1 to take a linear combination of the two environments.
+        alpha = np.random.uniform(0.0, 1.0)
+        beta = 1 - alpha
 
         # reset both envs
         state, info = env.reset()
@@ -455,10 +403,10 @@ def collect_type2_data(num_functions) -> dict:
         weights[episode] = np.array([alpha, beta])
 
         # run an episode
-        for step in range(1000):
+        for step in range(episode_length):
             # step env
             action = env.action_space.sample()
-            assert (env.get_state()[0] == env2.get_state()[0]).all()
+            assert (env.get_state()[0] - env2.get_state()[0] < 1e-9).all()
             next_state, reward, terminated, truncated, info = env.step(action)
             next_state2, reward, terminated, truncated, info = env2.step(action)
             assert (next_state != next_state2).any()
@@ -478,10 +426,12 @@ def collect_type2_data(num_functions) -> dict:
     # the goal is to predict the next state from the current state.
     all_xs = np.concatenate([states, actions], axis=-1)
     all_ys = next_states
-    example_xs = all_xs[:, :200]
-    example_ys = all_ys[:, :200]
-    xs = all_xs[:, 200:]
-    ys = all_ys[:, 200:]
+
+    # take first section to be examples
+    example_xs = all_xs[:, :n_examples]
+    example_ys = all_ys[:, :n_examples]
+    xs = all_xs[:, n_examples:]
+    ys = all_ys[:, n_examples:]
 
     # create torch dict and return
     results = {"example_xs": example_xs, "example_ys": example_ys, "xs": xs, "ys": ys, "hidden_params": hidden_params, "weights": weights}
@@ -504,12 +454,24 @@ def collect_data():
     #     return
 
     # gather data
-    train = collect_type1_data(num_functions=800, params="type1")
+    train = collect_type1_data(num_functions=1000, params="type1")
     type1 = collect_type1_data(num_functions=200, params="type1") # same distribution as training, but different parameters
     type2 = collect_type2_data(num_functions=200) # synthetic data for linear transfer. Not necessarily a feasible trajectory.
     type3 = collect_type1_data(num_functions=200, params="type3") # OOD paramaters.
 
-
+    # normalize
+    xs_means = train['xs'].mean(dim=(0, 1), keepdim=True)
+    xs_stds = train['xs'].std(dim=(0, 1), keepdim=True)
+    ys_means = xs_means[:, :, :29]
+    ys_stds = xs_stds[:, :, :29] # note the first 29 dimensions are the state space, which is the same as the ys. We reuse the normalization so that we can compare the state-next state later in the same units.
+    hp_means = train['hidden_params'].mean(dim=(0, 1), keepdim=True) # this is for the oracle. No other algs use this.
+    hp_stds = train['hidden_params'].std(dim=(0, 1), keepdim=True)
+    for dataset in [train, type1, type2, type3]:
+        dataset['xs'] = (dataset['xs'] - xs_means) / xs_stds
+        dataset['ys'] = (dataset['ys'] - ys_means) / ys_stds
+        dataset['example_xs'] = (dataset['example_xs'] - xs_means) / xs_stds
+        dataset['example_ys'] = (dataset['example_ys'] - ys_means) / ys_stds
+        dataset['hidden_params'] = (dataset['hidden_params'] - hp_means) / hp_stds
 
     # save it
     torch.save(train, os.path.join(save_dir, 'train.pt'))
@@ -522,7 +484,7 @@ def collect_data():
 
 class MujoCoAntDataset(BaseDataset):
 
-    def __init__(self, dataset_type, device, n_examples):
+    def __init__(self, dataset_type, device, n_examples, n_functions_per_sample=10):
         # load data
         path = os.path.join(os.path.dirname(__file__), 'MuJoCo')
         if not (os.path.exists(os.path.join(path, 'train.pt')) and
@@ -561,7 +523,7 @@ class MujoCoAntDataset(BaseDataset):
                          total_n_functions=total_n_functions,
                          total_n_samples_per_function=total_n_points,
                          data_type="deterministic",
-                         n_functions_per_sample=10,
+                         n_functions_per_sample=n_functions_per_sample,
                          n_examples_per_sample=n_examples,
                          n_points_per_sample=total_n_points,
                          device=device)
@@ -602,15 +564,58 @@ class MujoCoAntDataset(BaseDataset):
         return examples_xs, examples_ys, xs, ys, info
 
 
-def get_ant_datasets(device, n_examples):
-    train_dataset = MujoCoAntDataset('train', device, n_examples)
-    type1_dataset = MujoCoAntDataset('type1', device, n_examples)
-    type2_dataset = MujoCoAntDataset('type2', device, n_examples)
-    type3_dataset = MujoCoAntDataset('type3', device, n_examples)
+def get_ant_datasets(device, n_examples, n_functions):
+    train_dataset = MujoCoAntDataset('train', device, n_examples, n_functions_per_sample=n_functions)
+    type1_dataset = MujoCoAntDataset('type1', device, n_examples, n_functions_per_sample=n_functions)
+    type2_dataset = MujoCoAntDataset('type2', device, n_examples, n_functions_per_sample=n_functions)
+    type3_dataset = MujoCoAntDataset('type3', device, n_examples, n_functions_per_sample=n_functions)
     return train_dataset, type1_dataset, type2_dataset, type3_dataset
 
-def plot_ant(*args, **kwargs):
-    pass # todo not sure how to plot this.
+def plot_ant(xs, ys, y_hats, example_xs, example_ys, save_dir, type_i, info):
+    labels = [
+        "z-cord torso",
+        "w-orient torso",
+        "x-orient torso",
+        "y-orient torso",
+        "z-orient torso",
+        "torso-hip front left",
+        "front left ankle",
+        "torso-hip front right",
+        "front right ankle",
+        "torso-hip back left",
+        "back left ankle",
+        "torso-hip back right",
+        "back right ankle",
+        "x-vel torso",
+        "y-vel torso",
+        "z-vel torso",
+        "x-ang vel torso",
+        "y-ang vel torso",
+        "z-ang vel torso",
+        "ang vel torso-hip front left",
+        "ang vel front left ankle",
+        "ang vel torso-hip front right",
+        "ang vel front right ankle",
+        "ang vel torso-hip back left",
+        "ang vel back left ankle",
+        "ang vel torso-hip back right",
+        "ang vel back right ankle",
+        "x-cord torso (excluded)",
+        "y-cord torso (excluded)"
+    ]
+    for traj in range(ys.shape[0]):
+        # plot each output dimension
+        fig, axs = plt.subplots(5, 6, figsize=(20, 20))
+        axs = axs.flatten()
+        for i in range(ys.shape[-1]):
+            axs[i].plot(ys[traj, :, i], label='true')
+            axs[i].plot(y_hats[traj, :, i], label='pred')
+            axs[i].set_title(labels[i])
+        plt.legend()
+        plt.savefig(os.path.join(save_dir, f"ant_{type_i}_{traj}.png"))
+        plt.close()
+
+
 
 if __name__ == '__main__':
 

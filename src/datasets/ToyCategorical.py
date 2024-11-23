@@ -91,11 +91,11 @@ class ToyCategorical(BaseDataset):
 
 
 
-def get_toy_categetorical_datasets(device, n_examples):
-    train = ToyCategorical(device=device, n_examples_per_sample=n_examples)
-    type1 = ToyCategorical(device=device, n_examples_per_sample=n_examples)
+def get_toy_categetorical_datasets(device, n_examples, n_functions):
+    train = ToyCategorical(device=device, n_examples_per_sample=n_examples, n_functions_per_sample=n_functions)
+    type1 = ToyCategorical(device=device, n_examples_per_sample=n_examples, n_functions_per_sample=n_functions)
     type2 = None # no linear combinations of distributions
-    type3 = ToyCategorical(device=device, n_examples_per_sample=n_examples, unseen_distributions=True)
+    type3 = ToyCategorical(device=device, n_examples_per_sample=n_examples, unseen_distributions=True, n_functions_per_sample=n_functions)
     return train, type1, type2, type3
 
 def plot_toy_categorical(xs, ys, y_hats, example_xs, example_ys, save_dir, type_i, info):

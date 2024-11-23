@@ -9,6 +9,7 @@ from FunctionEncoder import *
 import time
 
 from src.CustomCallback import CustomCallback
+from src.algs.PrototypicalNetwork import ProtoTypicalNetwork
 from src.algs.get_model import get_model, predict_number_params, get_number_params, get_hidden_size
 from src.datasets.get_dataset import get_datasets, get_plotting_function
 from src.algs.Oracle import Oracle
@@ -21,7 +22,7 @@ def load_args(args):
     return args
 
 def check_args(args):
-    acceptable_algs = ["FE", "AE", "Transformer", "TFE", "Oracle", "BF", "BFB", "MAML1", "MAML5", "LS", "IP", "TransformerWithPositions"]
+    acceptable_algs = ["FE", "AE", "Transformer", "TFE", "Oracle", "BF", "BFB", "MAML1", "MAML5", "LS", "IP", "TransformerWithPositions", "Siamese", "Proto", "MLP"]
     acceptable_datasets = ["Polynomial", "Donut", "CIFAR", "Categorical", "7Scenes", "Ant"]
     assert args.n_basis >=1, f"n_basis must be at least 1, got {args.n_basis}"
     assert args.n_examples >= 1, f"n_examples must be at least 1, got {args.n_examples}"
@@ -31,7 +32,14 @@ def check_args(args):
     assert args.n_params >= 1, f"n_params must be at least 1, got {args.n_params}"
     assert args.n_layers >= 1, f"n_layers must be at least 1, got {args.n_layers}"
     assert args.device in ["cpu", "cuda"] or type(args.device) is int, f"device must be in ['cpu', 'cuda'] or an integer, got {args.device}"
-
+    if args.algorithm == "Siamese":
+        assert args.dataset == "CIFAR", "Siamese algorithm only works with classificiation datasets (CIFAR)"
+    if args.algorithm == "Proto":
+        assert args.dataset == "CIFAR", "Prototypical networks algorithm only works with classificiation datasets (CIFAR)"
+    if args.cross_entropy:
+        assert args.dataset == "CIFAR", "Cross entropy loss only works with classification datasets (CIFAR)"
+        assert args.algorithm not in ["LS", "IP"], "Function Encoders require inner product based loss functions."
+        assert args.algorithm not in ["Siamese", "Proto"], "These Ad-hoc algorithms have their own custom loss functions."
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -48,6 +56,7 @@ if __name__ == "__main__":
     parser.add_argument("--device", type=str, default="auto")
     parser.add_argument("--n_heads", type=int, default=5)
     parser.add_argument("--cross_entropy", action="store_true")
+    parser.add_argument("--maml_internal_learning_rate", type=float, default=None) # defaults to pretuned parameters for each dataset
     args = parser.parse_args()
 
     # find device
@@ -69,6 +78,15 @@ if __name__ == "__main__":
     else:
         maml_steps = 0
 
+    # set gradient accumulation for transformer since it devours memory
+    if args.algorithm == "Transformer":
+        args.gradient_accumulation = 10
+        args.num_functions = 1
+        args.epochs = args.epochs * args.gradient_accumulation
+    else:
+        args.gradient_accumulation = 1
+        args.num_functions = 10 # total number of functions per grad step is the same for both!
+
     # set seed
     torch.manual_seed(args.seed)
 
@@ -85,11 +103,11 @@ if __name__ == "__main__":
 
 
     # get datasets
-    train_dataset, type1_dataset, type2_dataset, type3_dataset = get_datasets(args.dataset, args.device, args.n_examples)
+    train_dataset, type1_dataset, type2_dataset, type3_dataset = get_datasets(args.dataset, args.device, args.n_examples, n_functions=args.num_functions)
 
     # get model
     args.hidden_size = get_hidden_size(args.algorithm, type1_dataset, args.n_params, args.n_basis, args.n_layers, args.n_heads) # calculated to have approximately args.n_params
-    model = get_model(args.algorithm, type1_dataset, args.n_basis, args.n_layers, args.n_heads, args.hidden_size, maml_steps=maml_steps, cross_entropy=args.cross_entropy).to(args.device)
+    model = get_model(args.algorithm, type1_dataset, args.n_basis, args.n_layers, args.n_heads, args.hidden_size, maml_steps=maml_steps, cross_entropy=args.cross_entropy, maml_internal_learning_rate=args.maml_internal_learning_rate, device=args.device, gradient_accumulation=args.gradient_accumulation)
 
     # assert right size
     model_n_params = get_number_params(model)
@@ -114,6 +132,8 @@ if __name__ == "__main__":
         if type2_dataset: # some datasets don't have type2
             cb_list.append(CustomCallback(train_dataset.data_type, testing_dataset=type2_dataset, prefix="type2", tensorboard=cb_list[0].tensorboard))
         cb_list.append(CustomCallback(train_dataset.data_type, testing_dataset=type3_dataset, prefix="type3", tensorboard=cb_list[0].tensorboard))
+        if args.algorithm in ["LS", "IP", "FE"]:
+            cb_list.append(TensorboardCallback(tensorboard=cb_list[0].tensorboard, prefix="fe_debug"))
         cb_list = ListCallback(cb_list)
 
         # train the model
@@ -138,7 +158,7 @@ if __name__ == "__main__":
             example_xs, example_ys, xs, ys, info = dataset.sample()
 
             # get predictions
-            if type(model) == Oracle:
+            if type(model) == Oracle or type(model) == ProtoTypicalNetwork:
                 y_hats = model.predict_from_examples(example_xs, example_ys, xs, info=info, method="least_squares")
             else:
                 y_hats = model.predict_from_examples(example_xs, example_ys, xs, method="least_squares")

@@ -27,14 +27,27 @@ class ModifiedCIFAR(CIFARDataset):
         info["classes"] = self.classes
         return example_xs, example_ys, xs, ys, info
 
+    def prototypical_network_fetch_data_for_computing_prototypes(self):
+        # returns 100 images from all classes, including heldout classes.
+        data = self.data_tensor
+        # data is of size 100x500xwhc. Need to select 100 random images from every class
+        perms = [torch.randperm(data.shape[1], device=self.device)[:100] for _ in range(data.shape[0])]
+        perms = torch.stack(perms, dim=0)
+        data = data[torch.arange(data.shape[0], device=self.device).unsqueeze(1), perms]
+
+        # also fetch which indicies are for training and testing
+        training_class_indicies = self.training_indicies
+        testing_class_indicies = self.heldout_indicies
+        return data, training_class_indicies, testing_class_indicies
 
 
 
-def get_cifar_datasets(device, n_examples):
-    train = ModifiedCIFAR(device=device, n_examples_per_sample=n_examples, split="train")
-    type1 = ModifiedCIFAR(device=device, n_examples_per_sample=n_examples, split="test")
+
+def get_cifar_datasets(device, n_examples, n_functions):
+    train = ModifiedCIFAR(device=device, n_examples_per_sample=n_examples, split="train", n_functions_per_sample=n_functions)
+    type1 = ModifiedCIFAR(device=device, n_examples_per_sample=n_examples, split="test", n_functions_per_sample=n_functions)
     type2 = None # no linear combinations of distributions
-    type3 = ModifiedCIFAR(device=device, n_examples_per_sample=n_examples, split="test", heldout_classes_only=True)
+    type3 = ModifiedCIFAR(device=device, n_examples_per_sample=n_examples, split="test", heldout_classes_only=True, n_functions_per_sample=n_functions)
     return train, type1, type2, type3
 
 def plot_cifar(xs, ys, y_hats, example_xs, example_ys, save_dir, type_i, info):

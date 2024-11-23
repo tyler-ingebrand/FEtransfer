@@ -35,7 +35,7 @@ class TransformerFunctionalEncoding(BaseAlg):
 
         # maybe a cnn
         if model_type == "CNN":
-            num_params += CNN.predict_number_params(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=2, hidden_size=model_kwargs["hidden_size"])
+            num_params += CNN.predict_number_params(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=4, hidden_size=model_kwargs["hidden_size"])
             input_size = (model_kwargs["hidden_size"], ) # input size to the next layer
 
         # encoder examples
@@ -72,7 +72,7 @@ class TransformerFunctionalEncoding(BaseAlg):
 
         # converts images to learned vectors first
         if model_type == "CNN":
-            self.conv = CNN(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=2, hidden_size=model_kwargs["hidden_size"])
+            self.conv = CNN(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=4, hidden_size=model_kwargs["hidden_size"])
             input_size = (model_kwargs["hidden_size"], )
 
         encoder_layer = torch.nn.TransformerEncoderLayer(d_model=n_basis, nhead=nheads, dim_feedforward=hidden_size, batch_first=True)

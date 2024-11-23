@@ -6,17 +6,19 @@ from FunctionEncoder import *
 from src.algs.AutoEncoder import AutoEncoder
 from src.algs.BruteForceBasis import BruteForceBasis
 from src.algs.BruteForceMLP import BruteForceMLP
-from src.algs.MAML import MAML
+from src.algs.MAML import MAML, MAML_INTERNAL_LEARNING_RATE
+from src.algs.MLP import MLP, MLPModel
 from src.algs.Oracle import Oracle
+from src.algs.PrototypicalNetwork import ProtoTypicalNetwork
+from src.algs.Siamese import SiameseNetwork
 from src.algs.Transformer import Transformer
 from src.algs.TransformerFunctionalEncoding import TransformerFunctionalEncoding
 from src.algs.TransformerWithPositions import TransformerWithPositions
 
-
 def predict_number_params(alg:str, n_basis:int, input_size:tuple[int], output_size:tuple[int], model_type, model_kwargs):
     num_params = 0
     if alg in ["FE", "LS", "IP"]:
-        num_params = FunctionEncoder.predict_number_params(input_size, output_size, n_basis, model_type, model_kwargs )
+        num_params = FunctionEncoder.predict_number_params(input_size, output_size, n_basis, model_type, model_kwargs, use_residuals_method=True )
     elif alg == "AE":
         num_params = AutoEncoder.predict_number_params(input_size, output_size, n_basis, model_type, model_kwargs)
     elif alg == "Transformer":
@@ -33,6 +35,12 @@ def predict_number_params(alg:str, n_basis:int, input_size:tuple[int], output_si
         num_params = MAML.predict_number_params(input_size, output_size, n_basis, model_type, model_kwargs)
     elif alg == "TransformerWithPositions":
         num_params = TransformerWithPositions.predict_number_params(input_size, output_size, n_basis, model_type, model_kwargs)
+    elif alg == "Siamese":
+        num_params = SiameseNetwork.predict_number_params(input_size, output_size, n_basis, model_type, model_kwargs)
+    elif alg == "Proto":
+        num_params = ProtoTypicalNetwork.predict_number_params(input_size, output_size, n_basis, model_type, model_kwargs)
+    elif alg == "MLP":
+        num_params = MLPModel.predict_number_params(input_size, output_size, n_basis, model_type, model_kwargs)
     else:
         raise ValueError(f"Algorithm {alg} not recognized.")
     return num_params
@@ -90,18 +98,18 @@ def get_hidden_size(model:str, train_dataset:BaseDataset, num_params:int, n_basi
     return best_input
 
 
-def get_model(alg:str, train_dataset:BaseDataset, n_basis:int, n_layers:int, n_heads:int, hidden_size:int, maml_steps:int, cross_entropy:bool=False):
+def get_model(alg:str, train_dataset:BaseDataset, n_basis:int, n_layers:int, n_heads:int, hidden_size:int, maml_steps:int, cross_entropy:bool=False, maml_internal_learning_rate=None, device="cuda", gradient_accumulation=1):
     model_type = "MLP" if len(train_dataset.input_size) == 1 else "CNN"
     if alg == "FE" or alg == "LS": # least squares generally performs better than inner product, so its the default for the function encoder.
         return FunctionEncoder(input_size=train_dataset.input_size,
                                output_size=train_dataset.output_size,
                                data_type=train_dataset.data_type,
                                n_basis=n_basis,
-                               model_type=model_type,
                                model_kwargs={"hidden_size": hidden_size, "n_layers": n_layers},
-                               use_residuals_method=False,
+                               use_residuals_method=True,
                                method="least_squares",
-                               )
+                               gradient_accumulation=gradient_accumulation,
+                               ).to(device)
     elif alg == "IP":
         return FunctionEncoder(input_size=train_dataset.input_size,
                                output_size=train_dataset.output_size,
@@ -109,9 +117,10 @@ def get_model(alg:str, train_dataset:BaseDataset, n_basis:int, n_layers:int, n_h
                                n_basis=n_basis,
                                model_type=model_type,
                                model_kwargs={"hidden_size": hidden_size, "n_layers": n_layers},
-                               use_residuals_method=False,
+                               use_residuals_method=True,
                                method="inner_product",
-                               )
+                               gradient_accumulation=gradient_accumulation,
+                               ).to(device)
     elif alg == "AE":
         return AutoEncoder(input_size=train_dataset.input_size,
                            output_size=train_dataset.output_size,
@@ -120,7 +129,8 @@ def get_model(alg:str, train_dataset:BaseDataset, n_basis:int, n_layers:int, n_h
                            model_type=model_type,
                             model_kwargs={"hidden_size": hidden_size, "n_layers": n_layers},
                            cross_entropy=cross_entropy,
-                            )
+                           gradient_accumulation=gradient_accumulation,
+                           ).to(device)
     elif alg == "Transformer":
         return Transformer(input_size=train_dataset.input_size,
                            output_size=train_dataset.output_size,
@@ -129,7 +139,8 @@ def get_model(alg:str, train_dataset:BaseDataset, n_basis:int, n_layers:int, n_h
                            model_type=model_type,
                            model_kwargs={"hidden_size": hidden_size, "n_layers": n_layers, "n_heads": n_heads},
                            cross_entropy=cross_entropy,
-                           )
+                           gradient_accumulation=gradient_accumulation,
+                           ).to(device)
 
     elif alg == "TFE":
         return TransformerFunctionalEncoding(input_size=train_dataset.input_size,
@@ -139,7 +150,8 @@ def get_model(alg:str, train_dataset:BaseDataset, n_basis:int, n_layers:int, n_h
                                              model_type=model_type,
                                             model_kwargs={"hidden_size": hidden_size, "n_layers": n_layers, "n_heads": n_heads},
                                              cross_entropy=cross_entropy,
-                                             )
+                                             gradient_accumulation=gradient_accumulation,
+                                             ).to(device)
     elif alg == "Oracle":
         return Oracle(input_size=train_dataset.input_size,
                         output_size=train_dataset.output_size,
@@ -148,7 +160,8 @@ def get_model(alg:str, train_dataset:BaseDataset, n_basis:int, n_layers:int, n_h
                         model_type=model_type,
                         model_kwargs={"hidden_size": hidden_size, "n_layers": n_layers},
                       cross_entropy=cross_entropy,
-                      )
+                      gradient_accumulation=gradient_accumulation,
+                      ).to(device)
     elif alg == "BF":
         return BruteForceMLP(input_size=train_dataset.input_size,
                             output_size=train_dataset.output_size,
@@ -157,7 +170,8 @@ def get_model(alg:str, train_dataset:BaseDataset, n_basis:int, n_layers:int, n_h
                             model_type=model_type,
                             model_kwargs={"hidden_size": hidden_size, "n_layers": n_layers},
                              cross_entropy=cross_entropy,
-                             )
+                             gradient_accumulation=gradient_accumulation,
+                             ).to(device)
     elif alg == "BFB":
         return BruteForceBasis(input_size=train_dataset.input_size,
                                 output_size=train_dataset.output_size,
@@ -167,7 +181,8 @@ def get_model(alg:str, train_dataset:BaseDataset, n_basis:int, n_layers:int, n_h
                                 model_type=model_type,
                                 model_kwargs={"hidden_size": hidden_size, "n_layers": n_layers},
                                cross_entropy=cross_entropy,
-                               )
+                               gradient_accumulation=gradient_accumulation,
+                               ).to(device)
     elif "MAML" in alg:
         return MAML(input_size=train_dataset.input_size,
                     output_size=train_dataset.output_size,
@@ -176,7 +191,9 @@ def get_model(alg:str, train_dataset:BaseDataset, n_basis:int, n_layers:int, n_h
                     n_maml_update_steps=maml_steps,
                     model_kwargs={"hidden_size": hidden_size, "n_layers": n_layers},
                     cross_entropy=cross_entropy,
-                    )
+                    internal_learning_rate=maml_internal_learning_rate if maml_internal_learning_rate else MAML_INTERNAL_LEARNING_RATE[alg][train_dataset.__class__.__name__],
+                    gradient_accumulation=gradient_accumulation,
+                    ).to(device)
     elif alg == "TransformerWithPositions":
         return TransformerWithPositions(input_size=train_dataset.input_size,
                                         output_size=train_dataset.output_size,
@@ -186,6 +203,36 @@ def get_model(alg:str, train_dataset:BaseDataset, n_basis:int, n_layers:int, n_h
                                         model_type=model_type,
                                         model_kwargs={"hidden_size": hidden_size, "n_layers": n_layers, "n_heads": n_heads},
                                         cross_entropy=cross_entropy,
-                                        )
+                                        gradient_accumulation=gradient_accumulation,
+                                        ).to(device)
+    elif alg == "Siamese":
+        return SiameseNetwork(input_size=train_dataset.input_size,
+                              output_size=train_dataset.output_size,
+                              data_type=train_dataset.data_type,
+                              n_basis=n_basis,
+                              model_type=model_type,
+                              model_kwargs={"hidden_size": hidden_size, "n_layers": n_layers},
+                              cross_entropy=cross_entropy,
+                              gradient_accumulation=gradient_accumulation,
+                              ).to(device)
+    elif alg == "Proto":
+        return ProtoTypicalNetwork(input_size=train_dataset.input_size,
+                                      output_size=train_dataset.output_size,
+                                      data_type=train_dataset.data_type,
+                                      n_basis=n_basis,
+                                      model_type=model_type,
+                                      model_kwargs={"hidden_size": hidden_size, "n_layers": n_layers},
+                                      cross_entropy=cross_entropy,
+                                   gradient_accumulation=gradient_accumulation,
+                                   ).to(device)
+    elif alg == "MLP":
+        return MLPModel(input_size=train_dataset.input_size,
+                    output_size=train_dataset.output_size,
+                    data_type=train_dataset.data_type,
+                    model_type=model_type,
+                    model_kwargs={"hidden_size": hidden_size, "n_layers": n_layers},
+                    cross_entropy=cross_entropy,
+                        gradient_accumulation=gradient_accumulation,
+                        ).to(device)
     else:
         raise ValueError(f"Algorithm {alg} not recognized.")

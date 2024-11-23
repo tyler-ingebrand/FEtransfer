@@ -19,7 +19,6 @@ class PolynomialDataset(BaseDataset):
                          output_size=(1,),
                          total_n_functions=float('inf'),
                          total_n_samples_per_function=float('inf'),
-                         n_functions_per_sample=10,
                          n_points_per_sample=1_000,
                          data_type="deterministic",
                          **kwargs)
@@ -67,35 +66,39 @@ class PolynomialDataset(BaseDataset):
 
         return example_xs, example_ys, xs, ys, info
 
-def get_polynomial_datasets(device, n_examples):
+def get_polynomial_datasets(device, n_examples, n_functions=10):
     train = PolynomialDataset(A_range=(0, 0),
                               B_range=(-3, 3),
                               C_range=(-3, 3),
                               D_range=(-3, 3),
                               input_range=(-5, 5),
                               device=device,
-                              n_examples_per_sample=n_examples)
+                              n_examples_per_sample=n_examples,
+                              n_functions_per_sample=n_functions)
     type1 = PolynomialDataset(A_range=(0, 0),
                               B_range=(-3, 3),
                               C_range=(-3, 3),
                               D_range=(-3, 3),
                               input_range=(-5, 5),
                               device=device,
-                              n_examples_per_sample=n_examples)
+                              n_examples_per_sample=n_examples,
+                              n_functions_per_sample=n_functions)
     type2 = PolynomialDataset(A_range=(0, 0),
                               B_range=(-10, 10),
                               C_range=(-10, 10),
                               D_range=(-10, 10),
                               input_range=(-5, 5),
                               device=device,
-                              n_examples_per_sample=n_examples)
+                              n_examples_per_sample=n_examples,
+                              n_functions_per_sample=n_functions)
     type3 = PolynomialDataset(A_range=(-3, 3),
                               B_range=(-3, 3),
                               C_range=(-3, 3),
                               D_range=(-3, 3),
                               input_range=(-5, 5),
                               device=device,
-                              n_examples_per_sample=n_examples)
+                              n_examples_per_sample=n_examples,
+                              n_functions_per_sample=n_functions)
     return train, type1, type2, type3
 
 

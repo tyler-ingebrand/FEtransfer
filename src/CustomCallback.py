@@ -8,6 +8,7 @@ from FunctionEncoder.Callbacks.BaseCallback import BaseCallback
 
 from src.algs.MAML import MAML
 from src.algs.Oracle import Oracle
+from src.algs.PrototypicalNetwork import ProtoTypicalNetwork
 from src.algs.generic_function_space_methods import _distance
 
 
@@ -55,19 +56,21 @@ class CustomCallback(BaseCallback):
         # with torch.no_grad():
         model = locals["self"]
 
-        # sample testing data
-        if self.testing_dataset is not None:
-            example_xs, example_ys, xs, ys, info = self.testing_dataset.sample()
-        else:
-            example_xs, example_ys, xs, ys, info = locals["example_xs"], locals["example_ys"], locals["xs"], locals["ys"], locals["_"]
+        if (locals['epoch'] + 1) % model.gradient_accumulation == 0:
 
-        # test
-        to_log = self.eval(model, example_xs, example_ys, xs, ys, info)
+            # sample testing data
+            if self.testing_dataset is not None:
+                example_xs, example_ys, xs, ys, info = self.testing_dataset.sample()
+            else:
+                example_xs, example_ys, xs, ys, info = locals["example_xs"], locals["example_ys"], locals["xs"], locals["ys"], locals["_"]
 
-        # log results
-        for tag, value in to_log.items():
-            self.tensorboard.add_scalar(tag, value, self.total_epochs)
-        self.total_epochs += 1
+            # test
+            to_log = self.eval(model, example_xs, example_ys, xs, ys, info)
+
+            # log results
+            for tag, value in to_log.items():
+                self.tensorboard.add_scalar(tag, value, self.total_epochs)
+            self.total_epochs += 1
 
 
 
@@ -77,7 +80,7 @@ class CustomCallback(BaseCallback):
             model.eval()
 
         # eval models
-        if type(model) == Oracle:
+        if type(model) == Oracle or type(model) == ProtoTypicalNetwork:
             y_hats = model.predict_from_examples(example_xs, example_ys, xs, info=info)
         else:
             y_hats = model.predict_from_examples(example_xs, example_ys, xs, method=model.method if isinstance(model, FunctionEncoder) else None)

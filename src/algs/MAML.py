@@ -1,13 +1,114 @@
+import os
 from typing import Union
 
+import numpy as np
 import torch
 from FunctionEncoder import BaseCallback, BaseDataset
 from FunctionEncoder.Model.Architecture.CNN import CNN, ConvLayers
 from FunctionEncoder.Model.Architecture.MLP import MLP, get_activation
+from tensorboard.backend.event_processing import event_accumulator
 from tqdm import trange
 
-from src.algs.BaseAlg import BaseAlg
-from src.algs.generic_function_space_methods import _distance
+try:
+    from src.algs.BaseAlg import BaseAlg
+    from src.algs.generic_function_space_methods import _distance
+except: # this is only used if you run the main function
+    import sys
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+    from src.algs.BaseAlg import BaseAlg
+    from src.algs.generic_function_space_methods import _distance
+
+def read_tensorboard(logdir, scalars):
+    """returns a dictionary of numpy arrays for each requested scalar"""
+    ea = event_accumulator.EventAccumulator(
+        logdir,
+        size_guidance={event_accumulator.SCALARS: 0},
+    )
+    _absorb_print = ea.Reload()
+    # make sure the scalars are in the event accumulator tags
+    for s in scalars:
+        assert s in ea.Tags()["scalars"], f"{s} not found in event accumulator"
+    data = {k: np.array([[e.step, e.value] for e in ea.Scalars(k)]) for k in scalars}
+    return data
+
+
+def parse_maml_internal_lr_tensorboards():
+    logdir = "./logs_param_sweep"
+    assert os.path.exists(logdir), f"{logdir} does not exist. Run './maml_parameter_sweep.sh'"
+    datasets = ["Polynomial", "CIFAR", "7Scenes", "Ant"]
+    algs = ["MAML1", "MAML5"]
+    scalars = ["type1/mean_distance_squared", "type2/mean_distance_squared", "type3/mean_distance_squared"]
+    data = {}
+    for dataset in datasets:
+        data[dataset] = {}
+        for alg in algs:
+            data[dataset][alg] = {}
+            rundir = f"{logdir}/{dataset}/{alg}"
+            for run in os.listdir(rundir):
+                # get performance
+                filedir = f"{rundir}/{run}"
+                print("Reading ", filedir)
+                data[dataset][alg][run] = {}
+                for s in scalars:
+                    try:
+                        tb_results = read_tensorboard(filedir, [s])
+                        data[dataset][alg][run][s] = tb_results[s][-10:][:, 1].mean()
+                    except:
+                        continue
+
+                # get internal lr from args
+                args = torch.load(f"{filedir}/args.pth", weights_only=False)
+                interal_lr = args.maml_internal_learning_rate
+                data[dataset][alg][run]["internal_lr"] = interal_lr
+
+    # now go through and print the best internal learning rates
+    for dataset in datasets:
+        for alg in algs:
+            lr, mean_distance_squared = [], []
+            failed=False
+            for run in data[dataset][alg]:
+                lr.append(data[dataset][alg][run]["internal_lr"])
+                if "type1/mean_distance_squared" not in data[dataset][alg][run]:
+                    failed=True
+                    print("Dataset: ", dataset, "Alg: ", alg, " fails due to insufficient memory. MAML can be memory intensive. ")
+                    break
+                mean_distance_squared.append(data[dataset][alg][run]["type3/mean_distance_squared"])
+            if failed:
+                continue
+            # convert nan to inf
+            mean_distance_squared = [np.inf if np.isnan(x) else x for x in mean_distance_squared]
+
+            # find best run
+            best_run = np.argmin(mean_distance_squared)
+            print(f"Dataset: {dataset}, Alg: {alg}, internal lr: {lr[best_run]}, mean_distance_squared: {mean_distance_squared[best_run]}")
+
+
+if __name__ == "__main__":
+    # add src to path, 2 back from filedir
+    parse_maml_internal_lr_tensorboards()
+
+
+# These are empirically good values for MAML. Unfortunately, this means we had to tune
+# MAML, in contrast to all other algorithms.
+# also, its not consistent in the sense that the best learning rate for type 1 transfer != the best learning rate for type 3 transfer
+MAML_INTERNAL_LEARNING_RATE = {
+    "MAML1":
+       {
+           "PolynomialDataset": 0.0005,
+           "ModifiedCIFAR":  0.0001,
+           "SevenScenesDataset": 1e-3,
+            "MujoCoAntDataset": 0.005,
+       },
+    "MAML5":
+        {
+            "PolynomialDataset": 5e-05,
+            "ModifiedCIFAR": 0.0005,
+            "SevenScenesDataset": 1e-4,
+            "MujoCoAntDataset": 0.005,
+        },
+}
+
+
 
 class MAML(BaseAlg):
 
@@ -44,11 +145,13 @@ class MAML(BaseAlg):
                  n_maml_update_steps :int =1,
                  gradient_accumulation :int =1,
                  cross_entropy: bool = False,
+                 internal_learning_rate=1e-2,
                  ):
         self.n_maml_update_steps = n_maml_update_steps
         super(MAML, self).__init__(input_size=input_size, output_size=output_size, data_type=data_type,
                                   n_basis=1, model_type=model_type, model_kwargs=model_kwargs,
                                   gradient_accumulation=gradient_accumulation, cross_entropy=cross_entropy)
+        self.internal_learning_rate = internal_learning_rate
 
         # create model and opt
         if model_type == "MLP":
@@ -117,7 +220,7 @@ class MAML(BaseAlg):
         params = self.copy_params(example_xs.shape[0])
 
         # next, we will update the models based on the examples via gradient descent for some number of gradient steps
-        learning_rate = 1e-1
+        learning_rate = self.internal_learning_rate
         for _ in range(self.n_maml_update_steps):
             # compute loss
             y_example_hats = self.forward_pass_copied_model(example_xs, params)
