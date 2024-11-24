@@ -18,7 +18,7 @@ from tqdm import trange
 import cv2
 
 # automatically add the bin path
-os.environ['LD_LIBRARY_PATH'] = os.environ.get('LD_LIBRARY_PATH', '') + ':' + os.path.expanduser('~/.mujoco/mujoco210/bin')
+# os.environ['LD_LIBRARY_PATH'] = os.environ.get('LD_LIBRARY_PATH', '') + ':' + os.path.expanduser('~/.mujoco/mujoco210/bin')
 
 
 LEG_LENGTH = (0.2 **2 + 0.2**2)**0.5
@@ -61,7 +61,7 @@ class VariableAntEnv(gym.Env):
         self.env_kwargs = env_kwargs
         self.env_kwargs["terminate_when_unhealthy"] = False
         self.env_kwargs["exclude_current_positions_from_observation"] = False
-        # self.env_kwargs["use_contact_forces"] = False
+        self.env_kwargs["include_cfrc_ext_in_observation"] = False
 
         self.render_mode = env_kwargs.get('render_mode', None)
         self.dynamics_variable_ranges = dynamics_variable_ranges
@@ -73,7 +73,7 @@ class VariableAntEnv(gym.Env):
                 self.dynamics_variable_ranges[k] = v
 
         # placeholder variable
-        self.env =  gym.make('Ant-v3', *self.env_args, **self.env_kwargs)
+        self.env =  gym.make('Ant-v5', *self.env_args, **self.env_kwargs)
         self.action_space = self.env.action_space
         # self.observation_space = self.env.observation_space[:29]
         self.observation_space = Box(low=self.env.observation_space.low[:29], high=self.env.observation_space.high[:29], dtype=self.env.observation_space.dtype)
@@ -133,17 +133,17 @@ class VariableAntEnv(gym.Env):
             # create xml file for these parameters
             path = self.create_xml_file(front_left_leg_length, front_left_foot_length, front_right_leg_length, front_right_foot_length, back_left_leg_length, back_left_foot_length, back_right_leg_length, back_right_foot_length, front_left_gear, front_right_gear, back_left_gear, back_right_gear, front_left_ankle_gear, front_right_ankle_gear, back_left_ankle_gear, back_right_ankle_gear,)
             self.current_dynamics_dict = current_dynamics_dict
-            self.env = gym.make('Ant-v3', xml_file=path, *self.env_args, **self.env_kwargs)
+            self.env = gym.make('Ant-v5', xml_file=path, *self.env_args, **self.env_kwargs)
 
         # return observation
         state, info = self.env.reset()
         info["dynamics"] = self.current_dynamics_dict
-        return state[:29], info
+        return state, info
 
     def step(self, action):
         next_state, reward, terminated, truncated, info = self.env.step(action)
         info["dynamics"] = self.current_dynamics_dict
-        return next_state[:29], reward, terminated, truncated, info
+        return next_state, reward, terminated, truncated, info
 
     def render(self):
         return self.env.render()
@@ -446,12 +446,12 @@ def collect_data():
     os.makedirs(save_dir, exist_ok=True)
 
     # if data already exists, exit
-    # if (os.path.exists(os.path.join(save_dir, 'train.pt')) and
-    #     os.path.exists(os.path.join(save_dir, 'type1.pt')) and
-    #     os.path.exists(os.path.join(save_dir, 'type2.pt')) and
-    #     os.path.exists(os.path.join(save_dir, 'type3.pt'))):
-    #     print("MuJoCo data already exists. Skipping.")
-    #     return
+    if (os.path.exists(os.path.join(save_dir, 'train.pt')) and
+        os.path.exists(os.path.join(save_dir, 'type1.pt')) and
+        os.path.exists(os.path.join(save_dir, 'type2.pt')) and
+        os.path.exists(os.path.join(save_dir, 'type3.pt'))):
+        print("MuJoCo data already exists. Skipping.")
+        return
 
     # gather data
     train = collect_type1_data(num_functions=1000, params="type1")
@@ -618,7 +618,6 @@ def plot_ant(xs, ys, y_hats, example_xs, example_ys, save_dir, type_i, info):
 
 
 if __name__ == '__main__':
-
     parser = argparse.ArgumentParser()
     parser.add_argument('--visualize', action='store_true')
     args = parser.parse_args()

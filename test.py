@@ -33,13 +33,23 @@ def check_args(args):
     assert args.n_layers >= 1, f"n_layers must be at least 1, got {args.n_layers}"
     assert args.device in ["cpu", "cuda"] or type(args.device) is int, f"device must be in ['cpu', 'cuda'] or an integer, got {args.device}"
     if args.algorithm == "Siamese":
-        assert args.dataset == "CIFAR", "Siamese algorithm only works with classificiation datasets (CIFAR)"
+        if not args.dataset == "CIFAR":
+            print("Siamese algorithm only works with classificiation datasets (CIFAR)")
+            exit()
     if args.algorithm == "Proto":
-        assert args.dataset == "CIFAR", "Prototypical networks algorithm only works with classificiation datasets (CIFAR)"
+        if not args.dataset == "CIFAR":
+            print("Prototypical networks algorithm only works with classificiation datasets (CIFAR)")
+            exit()
     if args.cross_entropy:
-        assert args.dataset == "CIFAR", "Cross entropy loss only works with classification datasets (CIFAR)"
-        assert args.algorithm not in ["LS", "IP"], "Function Encoders require inner product based loss functions."
-        assert args.algorithm not in ["Siamese", "Proto"], "These Ad-hoc algorithms have their own custom loss functions."
+        if not args.dataset == "CIFAR":
+            print("Cross entropy loss only works with classification datasets (CIFAR)")
+            exit()
+        if not args.algorithm not in ["LS", "IP"]: 
+            print("Function Encoders require inner product based loss functions, not cross entropy.")
+            exit()
+        if args.algorithm in ["Siamese", "Proto"]:
+            print("Siamese and Proto algorithms have their own custom loss functions, cannot use cross entropy.")
+            exit()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -86,6 +96,7 @@ if __name__ == "__main__":
     else:
         args.gradient_accumulation = 1
         args.num_functions = 10 # total number of functions per grad step is the same for both!
+    assert args.gradient_accumulation * args.num_functions == 10, "Total number of functions per gradient step must be 10."
 
     # set seed
     torch.manual_seed(args.seed)

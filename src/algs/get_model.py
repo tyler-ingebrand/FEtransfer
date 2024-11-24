@@ -18,7 +18,7 @@ from src.algs.TransformerWithPositions import TransformerWithPositions
 def predict_number_params(alg:str, n_basis:int, input_size:tuple[int], output_size:tuple[int], model_type, model_kwargs):
     num_params = 0
     if alg in ["FE", "LS", "IP"]:
-        num_params = FunctionEncoder.predict_number_params(input_size, output_size, n_basis, model_type, model_kwargs, use_residuals_method=True )
+        num_params = FunctionEncoder.predict_number_params(input_size, output_size, n_basis, model_type, model_kwargs, use_residuals_method=False )
     elif alg == "AE":
         num_params = AutoEncoder.predict_number_params(input_size, output_size, n_basis, model_type, model_kwargs)
     elif alg == "Transformer":
@@ -104,9 +104,10 @@ def get_model(alg:str, train_dataset:BaseDataset, n_basis:int, n_layers:int, n_h
         return FunctionEncoder(input_size=train_dataset.input_size,
                                output_size=train_dataset.output_size,
                                data_type=train_dataset.data_type,
+                               model_type=model_type,
                                n_basis=n_basis,
                                model_kwargs={"hidden_size": hidden_size, "n_layers": n_layers},
-                               use_residuals_method=True,
+                               use_residuals_method=False,
                                method="least_squares",
                                gradient_accumulation=gradient_accumulation,
                                ).to(device)
@@ -117,7 +118,7 @@ def get_model(alg:str, train_dataset:BaseDataset, n_basis:int, n_layers:int, n_h
                                n_basis=n_basis,
                                model_type=model_type,
                                model_kwargs={"hidden_size": hidden_size, "n_layers": n_layers},
-                               use_residuals_method=True,
+                               use_residuals_method=False,
                                method="inner_product",
                                gradient_accumulation=gradient_accumulation,
                                ).to(device)

@@ -104,7 +104,7 @@ def get_polynomial_datasets(device, n_examples, n_functions=10):
 
 def plot_polynomial(xs, ys, y_hats, example_xs, example_ys, save_dir, type_i, info):
     # plot
-    n_plots = 9
+    n_plots = min(9, xs.shape[0])
     fig, axs = plt.subplots(3, 3, figsize=(15, 10))
 
     # loop
