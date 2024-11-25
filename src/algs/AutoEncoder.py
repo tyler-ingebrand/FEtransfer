@@ -38,12 +38,12 @@ class AutoEncoder(BaseAlg):
 
         # models and optimizers
         if model_type == "CNN":
-            self.conv = CNN(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=2, hidden_size=model_kwargs["hidden_size"])
+            self.conv = CNN(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=2, learn_basis_functions=False, hidden_size=model_kwargs["hidden_size"])
             ins = model_kwargs["hidden_size"]
         else:
             ins = input_size[0]
-        self.encoder = MLP(input_size=(ins + output_size[0],), output_size=(n_basis,), n_basis=1, **model_kwargs)
-        self.decoder = MLP(input_size=(ins + n_basis,), output_size=output_size, n_basis=1, **model_kwargs)
+        self.encoder = MLP(input_size=(ins + output_size[0],), output_size=(n_basis,), n_basis=1, learn_basis_functions=False, **model_kwargs)
+        self.decoder = MLP(input_size=(ins + n_basis,), output_size=output_size, n_basis=1, learn_basis_functions=False, **model_kwargs)
 
         params = [*self.encoder.parameters()] + [*self.decoder.parameters()]
         if model_type == "CNN":

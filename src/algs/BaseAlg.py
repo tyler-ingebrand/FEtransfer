@@ -62,14 +62,14 @@ class BaseAlg(torch.nn.Module):
         losses = []
         bar = trange(epochs) if progress_bar else range(epochs)
         for epoch in bar:
-            example_xs, example_ys, xs, ys, _ = dataset.sample()
+            example_xs, example_ys, query_xs, query_ys, _ = dataset.sample()
 
             # approximate functions, compute error
-            y_hats = self.predict_from_examples(example_xs, example_ys, xs)
+            y_hats = self.predict_from_examples(example_xs, example_ys, query_xs)
             if not self.cross_entropy or self.data_type != "categorical":
-                loss = _distance(y_hats, ys, data_type=self.data_type, squared=True).mean()
+                loss = _distance(y_hats, query_ys, data_type=self.data_type, squared=True).mean()
             else:
-                classes = ys.argmax(dim=2)
+                classes = query_ys.argmax(dim=2)
                 loss = torch.nn.CrossEntropyLoss()(y_hats.reshape(-1, 2), classes.reshape(-1))
 
             # backprop with gradient clipping

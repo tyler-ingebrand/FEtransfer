@@ -480,7 +480,7 @@ def collect_data():
 
 class MujoCoAntDataset(BaseDataset):
 
-    def __init__(self, dataset_type, device, n_examples, n_functions_per_sample=10):
+    def __init__(self, dataset_type, device, n_examples, n_functions=10):
         # load data
         path = os.path.join(os.path.dirname(__file__), 'MuJoCo')
         if not (os.path.exists(os.path.join(path, 'train.pt')) and
@@ -512,16 +512,12 @@ class MujoCoAntDataset(BaseDataset):
         # init base class
         n_inputs = self.example_xs.shape[-1]
         n_outputs = self.example_ys.shape[-1]
-        total_n_functions = self.example_xs.shape[0]
-        total_n_points = self.xs.shape[1]
         super().__init__(input_size=(n_inputs,),
                          output_size=(n_outputs,),
-                         total_n_functions=total_n_functions,
-                         total_n_samples_per_function=total_n_points,
                          data_type="deterministic",
-                         n_functions_per_sample=n_functions_per_sample,
-                         n_examples_per_sample=n_examples,
-                         n_points_per_sample=total_n_points,
+                         n_functions=n_functions,
+                         n_examples=n_examples,
+                         n_queries=self.xs.shape[1],
                          device=device)
 
         # oracle info
@@ -534,7 +530,7 @@ class MujoCoAntDataset(BaseDataset):
                             torch.tensor,
                             dict]:
         # sample random functions
-        function_indicies = torch.randint(0, self.n_functions, (self.n_functions_per_sample,), device=self.device)
+        function_indicies = torch.randint(0, self.n_functions, (self.n_functions,), device=self.device)
         examples_xs = self.example_xs[function_indicies]
         examples_ys = self.example_ys[function_indicies]
         xs = self.xs[function_indicies]
@@ -551,8 +547,8 @@ class MujoCoAntDataset(BaseDataset):
             oracle_info = self.hidden_params[function_indicies]
 
         # maybe downsample number of example points
-        if self.n_examples_per_sample < self.example_xs.shape[1]:
-            example_indicies = torch.randint(0, self.example_xs.shape[1], (self.n_examples_per_sample,), device=self.device)
+        if self.n_examples < self.example_xs.shape[1]:
+            example_indicies = torch.randint(0, self.example_xs.shape[1], (self.n_examples,), device=self.device)
             examples_xs = examples_xs[:, example_indicies]
             examples_ys = examples_ys[:, example_indicies]
 
@@ -561,10 +557,10 @@ class MujoCoAntDataset(BaseDataset):
 
 
 def get_ant_datasets(device, n_examples, n_functions):
-    train_dataset = MujoCoAntDataset('train', device, n_examples, n_functions_per_sample=n_functions)
-    type1_dataset = MujoCoAntDataset('type1', device, n_examples, n_functions_per_sample=n_functions)
-    type2_dataset = MujoCoAntDataset('type2', device, n_examples, n_functions_per_sample=n_functions)
-    type3_dataset = MujoCoAntDataset('type3', device, n_examples, n_functions_per_sample=n_functions)
+    train_dataset = MujoCoAntDataset('train', device, n_examples, n_functions=n_functions)
+    type1_dataset = MujoCoAntDataset('type1', device, n_examples, n_functions=n_functions)
+    type2_dataset = MujoCoAntDataset('type2', device, n_examples, n_functions=n_functions)
+    type3_dataset = MujoCoAntDataset('type3', device, n_examples, n_functions=n_functions)
     return train_dataset, type1_dataset, type2_dataset, type3_dataset
 
 def plot_ant(xs, ys, y_hats, example_xs, example_ys, save_dir, type_i, info):

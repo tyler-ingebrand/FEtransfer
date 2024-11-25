@@ -57,20 +57,20 @@ class Transformer(BaseAlg):
         num_params = 0
 
         if model_type == "CNN":
-            num_params += CNN.predict_number_params(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=4, hidden_size=model_kwargs["hidden_size"])
+            num_params += CNN.predict_number_params(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, learn_basis_functions=False,  n_layers=4, hidden_size=model_kwargs["hidden_size"])
             input_size = (model_kwargs["hidden_size"],)
 
         # encoder examples
-        num_params += MLP.predict_number_params((input_size[0] + output_size[0],), (n_basis,), n_basis=1, hidden_size=model_kwargs["hidden_size"], n_layers=2)
+        num_params += MLP.predict_number_params((input_size[0] + output_size[0],), (n_basis,), n_basis=1,  learn_basis_functions=False, hidden_size=model_kwargs["hidden_size"], n_layers=2)
 
         # encoder prediction
-        num_params += MLP.predict_number_params((input_size[0],), (n_basis,), n_basis=1, hidden_size=model_kwargs["hidden_size"], n_layers=2)
+        num_params += MLP.predict_number_params((input_size[0],), (n_basis,), n_basis=1,  learn_basis_functions=False, hidden_size=model_kwargs["hidden_size"], n_layers=2)
 
         # transformer
         num_params += predict_number_params_transformer(n_basis, model_kwargs["hidden_size"])
 
         # decoder
-        num_params += MLP.predict_number_params((n_basis,), (output_size[0],), n_basis=1, hidden_size=model_kwargs["hidden_size"], n_layers=2)
+        num_params += MLP.predict_number_params((n_basis,), (output_size[0],), n_basis=1, learn_basis_functions=False,  hidden_size=model_kwargs["hidden_size"], n_layers=2)
         return num_params
 
 
@@ -93,7 +93,7 @@ class Transformer(BaseAlg):
 
         # conv net if needed
         if model_type == "CNN":
-            self.conv = CNN(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=4, hidden_size=model_kwargs["hidden_size"])
+            self.conv = CNN(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=4,  learn_basis_functions=False, hidden_size=model_kwargs["hidden_size"])
             input_size = (model_kwargs["hidden_size"],)
         self.transformer = torch.nn.Transformer(d_model=n_basis,
                                                 nhead=nheads,
@@ -102,9 +102,9 @@ class Transformer(BaseAlg):
                                                 dim_feedforward=hidden_size,
                                                 dropout=0.1,
                                                 batch_first=True)
-        self.encoder_examples = MLP((input_size[0] + output_size[0],), (n_basis,), n_basis=1, hidden_size=hidden_size, n_layers=2)
-        self.encoder_prediction = MLP(input_size=(input_size[0],), output_size=(n_basis,), n_basis=1, hidden_size=hidden_size, n_layers=2)
-        self.decoder = MLP(input_size=(n_basis,), output_size=(output_size[0],), n_basis=1, hidden_size=hidden_size, n_layers=2)
+        self.encoder_examples = MLP((input_size[0] + output_size[0],), (n_basis,), n_basis=1,  learn_basis_functions=False, hidden_size=hidden_size, n_layers=2)
+        self.encoder_prediction = MLP(input_size=(input_size[0],), output_size=(n_basis,), n_basis=1,  learn_basis_functions=False, hidden_size=hidden_size, n_layers=2)
+        self.decoder = MLP(input_size=(n_basis,), output_size=(output_size[0],), n_basis=1,  learn_basis_functions=False, hidden_size=hidden_size, n_layers=2)
         self.opt = torch.optim.Adam([ *self.transformer.parameters(),
                                             *self.encoder_examples.parameters(),
                                             *self.encoder_prediction.parameters(),

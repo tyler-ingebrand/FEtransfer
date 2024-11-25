@@ -60,12 +60,12 @@ class CustomCallback(BaseCallback):
 
             # sample testing data
             if self.testing_dataset is not None:
-                example_xs, example_ys, xs, ys, info = self.testing_dataset.sample()
+                example_xs, example_ys, query_xs, query_ys, info = self.testing_dataset.sample()
             else:
-                example_xs, example_ys, xs, ys, info = locals["example_xs"], locals["example_ys"], locals["xs"], locals["ys"], locals["_"]
+                example_xs, example_ys, query_xs, query_ys, info = locals["example_xs"], locals["example_ys"], locals["query_xs"], locals["query_ys"], locals["_"]
 
             # test
-            to_log = self.eval(model, example_xs, example_ys, xs, ys, info)
+            to_log = self.eval(model, example_xs, example_ys, query_xs, query_ys, info)
 
             # log results
             for tag, value in to_log.items():

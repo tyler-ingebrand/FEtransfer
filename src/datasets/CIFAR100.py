@@ -44,10 +44,10 @@ class ModifiedCIFAR(CIFARDataset):
 
 
 def get_cifar_datasets(device, n_examples, n_functions):
-    train = ModifiedCIFAR(device=device, n_examples_per_sample=n_examples, split="train", n_functions_per_sample=n_functions)
-    type1 = ModifiedCIFAR(device=device, n_examples_per_sample=n_examples, split="test", n_functions_per_sample=n_functions)
+    train = ModifiedCIFAR(device=device, n_examples=n_examples, split="train", n_functions=n_functions)
+    type1 = ModifiedCIFAR(device=device, n_examples=n_examples, split="test", n_functions=n_functions)
     type2 = None # no linear combinations of distributions
-    type3 = ModifiedCIFAR(device=device, n_examples_per_sample=n_examples, split="test", heldout_classes_only=True, n_functions_per_sample=n_functions)
+    type3 = ModifiedCIFAR(device=device, n_examples=n_examples, split="test", heldout_classes_only=True, n_functions=n_functions)
     return train, type1, type2, type3
 
 def plot_cifar(xs, ys, y_hats, example_xs, example_ys, save_dir, type_i, info):

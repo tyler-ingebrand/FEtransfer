@@ -17,13 +17,13 @@ class Oracle(BaseAlg):
         oracle_size = model_kwargs["oracle_size"]
         n_params = 0
         if model_type == "CNN":
-            n_params += CNN.predict_number_params(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=2, hidden_size=model_kwargs["hidden_size"])
+            n_params += CNN.predict_number_params(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=2,  learn_basis_functions=False, hidden_size=model_kwargs["hidden_size"])
             ins = model_kwargs["hidden_size"]
         else:
             ins = input_size[0]
         ins = ins + oracle_size
         outs = output_size[0]
-        n_params += MLP.predict_number_params((ins,), (outs,), n_basis=1, **model_kwargs)
+        n_params += MLP.predict_number_params((ins,), (outs,), n_basis=1,  learn_basis_functions=False, **model_kwargs)
         return n_params
 
     def __init__(self,
@@ -53,7 +53,7 @@ class Oracle(BaseAlg):
                                           n_basis=1, model_type=model_type, model_kwargs=model_kwargs,
                                           gradient_accumulation=gradient_accumulation, cross_entropy=cross_entropy)
         if self.model_type == "CNN":
-            self.conv = CNN(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=2, hidden_size=model_kwargs["hidden_size"])
+            self.conv = CNN(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=2, learn_basis_functions=False,  hidden_size=model_kwargs["hidden_size"])
             ins = model_kwargs["hidden_size"]
         else:
             ins = input_size[0]
@@ -61,7 +61,7 @@ class Oracle(BaseAlg):
         # models and optimizers
         ins = ins + oracle_size
         outs = output_size[0]
-        self.model = MLP((ins,), (outs,), n_basis=1, **model_kwargs)
+        self.model = MLP((ins,), (outs,), n_basis=1,  learn_basis_functions=False, **model_kwargs)
         self.opt = torch.optim.Adam(self.model.parameters(), lr=1e-3)
 
 
@@ -97,14 +97,14 @@ class Oracle(BaseAlg):
         losses = []
         bar = trange(epochs) if progress_bar else range(epochs)
         for epoch in bar:
-            example_xs, example_ys, xs, ys, _ = dataset.sample()
+            example_xs, example_ys, query_xs, query_ys, _ = dataset.sample()
 
             # approximate functions, compute error
-            y_hats = self.predict_from_examples(example_xs, example_ys, xs, _) # note this is special because it needs privelged info
+            y_hats = self.predict_from_examples(example_xs, example_ys, query_xs, _) # note this is special because it needs privelged info
             if not self.cross_entropy or self.data_type != "categorical":
-                loss = _distance(y_hats, ys, data_type=self.data_type, squared=True).mean()
+                loss = _distance(y_hats, query_ys, data_type=self.data_type, squared=True).mean()
             else:
-                classes = ys.argmax(dim=2)
+                classes = query_ys.argmax(dim=2)
                 loss = torch.nn.CrossEntropyLoss()(y_hats.reshape(-1, 2), classes.reshape(-1))
             # backprop with gradient clipping
             loss.backward()

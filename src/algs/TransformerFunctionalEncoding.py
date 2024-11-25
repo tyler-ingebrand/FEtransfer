@@ -35,17 +35,17 @@ class TransformerFunctionalEncoding(BaseAlg):
 
         # maybe a cnn
         if model_type == "CNN":
-            num_params += CNN.predict_number_params(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=4, hidden_size=model_kwargs["hidden_size"])
+            num_params += CNN.predict_number_params(input_size=input_size, output_size=(model_kwargs["hidden_size"],),  learn_basis_functions=False, n_basis=1, n_layers=4, hidden_size=model_kwargs["hidden_size"])
             input_size = (model_kwargs["hidden_size"], ) # input size to the next layer
 
         # encoder examples
-        num_params += MLP.predict_number_params((input_size[0] + output_size[0],), (n_basis,), n_basis=1, hidden_size=model_kwargs["hidden_size"], n_layers=2)
+        num_params += MLP.predict_number_params((input_size[0] + output_size[0],), (n_basis,), learn_basis_functions=False,  n_basis=1, hidden_size=model_kwargs["hidden_size"], n_layers=2)
 
         # basis functions
         num_params += MLP.predict_number_params(input_size, output_size, n_basis=n_basis, hidden_size=model_kwargs["hidden_size"], n_layers=model_kwargs["n_layers"])
 
         # decoder
-        num_params += MLP.predict_number_params((n_basis,), (n_basis,), n_basis=1, hidden_size=model_kwargs["hidden_size"], n_layers=2)
+        num_params += MLP.predict_number_params((n_basis,), (n_basis,), n_basis=1, learn_basis_functions=False,  hidden_size=model_kwargs["hidden_size"], n_layers=2)
 
         # transformer size - decoder only model
         num_params += predict_number_params_transformer_decoder(n_basis, model_kwargs["hidden_size"])
@@ -72,14 +72,14 @@ class TransformerFunctionalEncoding(BaseAlg):
 
         # converts images to learned vectors first
         if model_type == "CNN":
-            self.conv = CNN(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=4, hidden_size=model_kwargs["hidden_size"])
+            self.conv = CNN(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, learn_basis_functions=False, n_layers=4, hidden_size=model_kwargs["hidden_size"])
             input_size = (model_kwargs["hidden_size"], )
 
         encoder_layer = torch.nn.TransformerEncoderLayer(d_model=n_basis, nhead=nheads, dim_feedforward=hidden_size, batch_first=True)
         self.transformer = torch.nn.TransformerEncoder(encoder_layer, num_layers=4)
-        self.encoder_examples = MLP((input_size[0] + output_size[0],), (n_basis,), n_basis=1, hidden_size=hidden_size, n_layers=2)
+        self.encoder_examples = MLP((input_size[0] + output_size[0],), (n_basis,), n_basis=1,  learn_basis_functions=False, hidden_size=hidden_size, n_layers=2)
         self.basis_functions = MLP(input_size=input_size, output_size=output_size, n_basis=n_basis, hidden_size=hidden_size, n_layers=model_kwargs["n_layers"])
-        self.decoder = MLP((n_basis,), (n_basis,), n_basis=1, hidden_size=hidden_size, n_layers=2)
+        self.decoder = MLP((n_basis,), (n_basis,), n_basis=1,  learn_basis_functions=False, hidden_size=hidden_size, n_layers=2)
         self.opt = torch.optim.Adam([ *self.transformer.parameters(),
                                             *self.encoder_examples.parameters(),
                                             *self.basis_functions.parameters(),

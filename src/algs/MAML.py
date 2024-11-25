@@ -115,9 +115,9 @@ class MAML(BaseAlg):
     @staticmethod
     def predict_number_params(input_size, output_size, n_basis, model_type, model_kwargs):
         if model_type == "MLP":
-            n_params = MLP.predict_number_params(input_size, output_size, n_basis=1, **model_kwargs)
+            n_params = MLP.predict_number_params(input_size, output_size, n_basis=1,  learn_basis_functions=False, **model_kwargs)
         else:
-            n_params = CNN.predict_number_params(input_size, output_size, n_basis=1, **model_kwargs)
+            n_params = CNN.predict_number_params(input_size, output_size, n_basis=1, learn_basis_functions=False,  **model_kwargs)
         return n_params
 
     @staticmethod
@@ -155,9 +155,9 @@ class MAML(BaseAlg):
 
         # create model and opt
         if model_type == "MLP":
-            self.model = MLP(input_size, output_size, n_basis=1, **model_kwargs)
+            self.model = MLP(input_size, output_size, n_basis=1,  learn_basis_functions=False, **model_kwargs)
         else:
-            self.model = CNN(input_size, output_size, n_basis=1, **model_kwargs)
+            self.model = CNN(input_size, output_size, n_basis=1,  learn_basis_functions=False, **model_kwargs)
         self.opt = torch.optim.Adam(self.model.parameters(), lr=1e-3)
 
         # vmaps

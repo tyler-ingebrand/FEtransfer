@@ -119,9 +119,7 @@ class SevenScenesDataset(BaseDataset):
 
         super().__init__(input_size=(3,30,40),
                          output_size=(3,), # (16,),
-                         total_n_functions=50, # possible scenes including train test and heldout
-                         total_n_samples_per_function=1000,
-                         n_points_per_sample=200,
+                         n_queries=200,
                          data_type="deterministic",
                          **kwargs)
         self.split = split
@@ -232,12 +230,12 @@ class SevenScenesDataset(BaseDataset):
 
 
     def sample_info(self):
-        scene_indicies = torch.randint(0, len(self.scenes), (self.n_functions_per_sample,))
+        scene_indicies = torch.randint(0, len(self.scenes), (self.n_functions,))
         num_sequences = [len(self.scenes_sequencies[self.scenes[i]]) for i in scene_indicies]
-        sequence_indicies = torch.cat([torch.randint(0, num_sequences[i], (1,)) for i in range(self.n_functions_per_sample)], dim=0)
+        sequence_indicies = torch.cat([torch.randint(0, num_sequences[i], (1,)) for i in range(self.n_functions)], dim=0)
         scenes = [self.scenes[i] for i in scene_indicies]
-        sequences = [self.scenes_sequencies[scenes[i]][sequence_indicies[i]] for i in range(self.n_functions_per_sample)]
-        oracle_indicies = [self.oracle_index[scenes[i]][sequences[i]] for i in range(self.n_functions_per_sample)]
+        sequences = [self.scenes_sequencies[scenes[i]][sequence_indicies[i]] for i in range(self.n_functions)]
+        oracle_indicies = [self.oracle_index[scenes[i]][sequences[i]] for i in range(self.n_functions)]
         oracle_ohe = torch.nn.functional.one_hot(torch.tensor(oracle_indicies), num_classes=self.oracle_size).float()
         return {"scene_indicies": scene_indicies,
                 "sequence_indicies": sequence_indicies,
@@ -249,7 +247,7 @@ class SevenScenesDataset(BaseDataset):
     def sample_images(self, info, count):
         all_images = []
         all_labels = []
-        for i in range(self.n_functions_per_sample):
+        for i in range(self.n_functions):
             # for this scene and sequence
             scene = info["scenes"][i]
             sequence = info["sequences"][i]
@@ -274,8 +272,8 @@ class SevenScenesDataset(BaseDataset):
             info = self.sample_info()
 
             # get images and labels
-            example_xs, example_ys = self.sample_images(info, self.n_examples_per_sample)
-            xs, ys = self.sample_images(info, self.n_points_per_sample)
+            example_xs, example_ys = self.sample_images(info, self.n_examples)
+            xs, ys = self.sample_images(info, self.n_queries)
 
             # collapse labels from 4x4 to 16
             # example_ys = example_ys.reshape(example_ys.shape[0], example_ys.shape[1], -1)
@@ -296,10 +294,10 @@ class SevenScenesDataset(BaseDataset):
 
 
 def get_7scenes_datasets(device, n_examples, n_functions):
-    train = SevenScenesDataset(device=device, n_examples_per_sample=n_examples, split="train", heldout=False, n_functions_per_sample=n_functions)
-    type1 = SevenScenesDataset(device=device, n_examples_per_sample=n_examples, split="test", heldout=False, n_functions_per_sample=n_functions)
+    train = SevenScenesDataset(device=device, n_examples=n_examples, split="train", heldout=False, n_functions=n_functions)
+    type1 = SevenScenesDataset(device=device, n_examples=n_examples, split="test", heldout=False, n_functions=n_functions)
     type2 = None  # no linear combinations of distributions
-    type3 = SevenScenesDataset(device=device, n_examples_per_sample=n_examples, heldout=True, n_functions_per_sample=n_functions)
+    type3 = SevenScenesDataset(device=device, n_examples=n_examples, heldout=True, n_functions=n_functions)
     return train, type1, type2, type3
 
 def plot_7scenes(xs, ys, y_hats, example_xs, example_ys, save_dir, type_i, info):

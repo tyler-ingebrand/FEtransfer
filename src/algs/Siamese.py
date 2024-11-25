@@ -17,11 +17,12 @@ class SiameseNetwork(BaseAlg):
         n_params = 0
         if model_type == "CNN":
             n_params += CNN.predict_number_params(input_size=input_size, output_size=(model_kwargs["hidden_size"],),
-                                                  n_basis=1, n_layers=3, hidden_size=model_kwargs["hidden_size"])
+                                                  n_basis=1, n_layers=3,  learn_basis_functions=False, hidden_size=model_kwargs["hidden_size"])
             ins = model_kwargs["hidden_size"]
         else:
             ins = input_size[0]
         n_params += MLP.predict_number_params(input_size=(ins,), output_size=(n_basis,), n_basis=1,
+                                              learn_basis_functions=False,
                                               **model_kwargs)
         return n_params
 
@@ -42,11 +43,12 @@ class SiameseNetwork(BaseAlg):
         # models and optimizers
         if model_type == "CNN":
             self.conv = CNN(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=3,
+                            learn_basis_functions=False,
                             hidden_size=model_kwargs["hidden_size"])
             ins = model_kwargs["hidden_size"]
         else:
             ins = input_size[0]
-        self.network = MLP(input_size=(ins, ), output_size=(n_basis,), n_basis=1, **model_kwargs)
+        self.network = MLP(input_size=(ins, ), output_size=(n_basis,), n_basis=1, learn_basis_functions=False,  **model_kwargs)
         self.threshold = 0.1 # this is to prevent the loss function on focusing on sending negative examples to infinite distance apart
 
         self.opt = torch.optim.Adam(self.parameters(), lr=1e-3)
@@ -76,11 +78,11 @@ class SiameseNetwork(BaseAlg):
         losses = []
         bar = trange(epochs) if progress_bar else range(epochs)
         for epoch in bar:
-            example_xs, example_ys, xs, ys, _ = dataset.sample()
+            example_xs, example_ys, query_xs, query_ys, _ = dataset.sample()
 
             # get embeddings
             example_latents = self.network(self.conv(example_xs))
-            latents = self.network(self.conv(xs))
+            latents = self.network(self.conv(query_xs))
 
             # compute pairwise distance
             pairwise_distances = ((example_latents.unsqueeze(1) - latents.unsqueeze(2))**2).sum(dim=-1)

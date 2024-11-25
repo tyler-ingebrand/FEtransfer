@@ -16,7 +16,7 @@ class BruteForceBasis(BaseAlg):
     def predict_number_params(input_size, output_size, n_basis, model_type, model_kwargs):
         n_params = 0
         if model_type == "CNN":
-            n_params += CNN.predict_number_params(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=2, hidden_size=model_kwargs["hidden_size"])
+            n_params += CNN.predict_number_params(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=2,  learn_basis_functions=False, hidden_size=model_kwargs["hidden_size"])
             ins = model_kwargs["hidden_size"]
         else:
             ins = input_size[0]
@@ -25,7 +25,7 @@ class BruteForceBasis(BaseAlg):
         outs_example = n_basis
         ins_basis = ins
         outs_basis = output_size[0]
-        n_params += MLP.predict_number_params((ins_example,), (outs_example,), n_basis=1, **model_kwargs)
+        n_params += MLP.predict_number_params((ins_example,), (outs_example,), n_basis=1,  learn_basis_functions=False, **model_kwargs)
         n_params += MLP.predict_number_params((ins_basis,), (outs_basis,), n_basis=n_basis, **model_kwargs)
 
         return n_params
@@ -46,7 +46,7 @@ class BruteForceBasis(BaseAlg):
                                           gradient_accumulation=gradient_accumulation, cross_entropy=cross_entropy)
 
         if self.model_type == "CNN":
-            self.conv = CNN(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=2, hidden_size=model_kwargs["hidden_size"])
+            self.conv = CNN(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1,  learn_basis_functions=False, n_layers=2, hidden_size=model_kwargs["hidden_size"])
             ins = model_kwargs["hidden_size"]
         else:
             ins = input_size[0]
@@ -57,7 +57,7 @@ class BruteForceBasis(BaseAlg):
         outs_basis = output_size[0]
 
         # create example to basis model
-        self.example_to_basis = MLP(input_size=(ins_example,), output_size=(outs_example,), n_basis=1, **model_kwargs)
+        self.example_to_basis = MLP(input_size=(ins_example,), output_size=(outs_example,), n_basis=1, learn_basis_functions=False, **model_kwargs)
 
         # create basis
         self.basis = MLP(input_size=(ins_basis,), output_size=(outs_basis,), n_basis=n_basis, **model_kwargs)

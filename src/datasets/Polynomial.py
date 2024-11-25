@@ -17,9 +17,7 @@ class PolynomialDataset(BaseDataset):
                  **kwargs):
         super().__init__(input_size=(1,),
                          output_size=(1,),
-                         total_n_functions=float('inf'),
-                         total_n_samples_per_function=float('inf'),
-                         n_points_per_sample=1_000,
+                         n_queries=1_000,
                          data_type="deterministic",
                          **kwargs)
 
@@ -31,10 +29,10 @@ class PolynomialDataset(BaseDataset):
         self.oracle_size = 4
 
     def sample_info(self):
-        As = torch.rand(self.n_functions_per_sample, device=self.device) * (self.A_range[1] - self.A_range[0]) + self.A_range[0]
-        Bs = torch.rand(self.n_functions_per_sample, device=self.device) * (self.B_range[1] - self.B_range[0]) + self.B_range[0]
-        Cs = torch.rand(self.n_functions_per_sample, device=self.device) * (self.C_range[1] - self.C_range[0]) + self.C_range[0]
-        Ds = torch.rand(self.n_functions_per_sample, device=self.device) * (self.D_range[1] - self.D_range[0]) + self.D_range[0]
+        As = torch.rand(self.n_functions, device=self.device) * (self.A_range[1] - self.A_range[0]) + self.A_range[0]
+        Bs = torch.rand(self.n_functions, device=self.device) * (self.B_range[1] - self.B_range[0]) + self.B_range[0]
+        Cs = torch.rand(self.n_functions, device=self.device) * (self.C_range[1] - self.C_range[0]) + self.C_range[0]
+        Ds = torch.rand(self.n_functions, device=self.device) * (self.D_range[1] - self.D_range[0]) + self.D_range[0]
         oracle_inputs = torch.stack([As, Bs, Cs, Ds], dim=1)
         return {"As": As, "Bs": Bs, "Cs": Cs, "Ds": Ds, "oracle_inputs": oracle_inputs}
 
@@ -57,8 +55,8 @@ class PolynomialDataset(BaseDataset):
         info = self.sample_info()
 
         # sample inputs
-        example_xs = self.sample_inputs(info, n_samples=self.n_examples_per_sample)
-        xs = self.sample_inputs(info, n_samples=self.n_points_per_sample)
+        example_xs = self.sample_inputs(info, n_samples=self.n_examples)
+        xs = self.sample_inputs(info, n_samples=self.n_queries)
 
         # compute outputs
         example_ys = self.compute_outputs(example_xs, info)
@@ -73,32 +71,32 @@ def get_polynomial_datasets(device, n_examples, n_functions=10):
                               D_range=(-3, 3),
                               input_range=(-5, 5),
                               device=device,
-                              n_examples_per_sample=n_examples,
-                              n_functions_per_sample=n_functions)
+                              n_examples=n_examples,
+                              n_functions=n_functions)
     type1 = PolynomialDataset(A_range=(0, 0),
                               B_range=(-3, 3),
                               C_range=(-3, 3),
                               D_range=(-3, 3),
                               input_range=(-5, 5),
                               device=device,
-                              n_examples_per_sample=n_examples,
-                              n_functions_per_sample=n_functions)
+                              n_examples=n_examples,
+                              n_functions=n_functions)
     type2 = PolynomialDataset(A_range=(0, 0),
                               B_range=(-10, 10),
                               C_range=(-10, 10),
                               D_range=(-10, 10),
                               input_range=(-5, 5),
                               device=device,
-                              n_examples_per_sample=n_examples,
-                              n_functions_per_sample=n_functions)
+                              n_examples=n_examples,
+                              n_functions=n_functions)
     type3 = PolynomialDataset(A_range=(-3, 3),
                               B_range=(-3, 3),
                               C_range=(-3, 3),
                               D_range=(-3, 3),
                               input_range=(-5, 5),
                               device=device,
-                              n_examples_per_sample=n_examples,
-                              n_functions_per_sample=n_functions)
+                              n_examples=n_examples,
+                              n_functions=n_functions)
     return train, type1, type2, type3
 
 

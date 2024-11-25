@@ -17,11 +17,11 @@ class ProtoTypicalNetwork(BaseAlg):
         n_params = 0
         if model_type == "CNN":
             n_params += CNN.predict_number_params(input_size=input_size, output_size=(model_kwargs["hidden_size"],),
-                                                  n_basis=1, n_layers=3, hidden_size=model_kwargs["hidden_size"])
+                                                  n_basis=1, n_layers=3,  learn_basis_functions=False, hidden_size=model_kwargs["hidden_size"])
             ins = model_kwargs["hidden_size"]
         else:
             ins = input_size[0]
-        n_params += MLP.predict_number_params(input_size=(ins,), output_size=(n_basis,), n_basis=1,
+        n_params += MLP.predict_number_params(input_size=(ins,), output_size=(n_basis,), n_basis=1, learn_basis_functions=False,
                                               **model_kwargs)
         return n_params
 
@@ -42,11 +42,12 @@ class ProtoTypicalNetwork(BaseAlg):
         # models and optimizers
         if model_type == "CNN":
             self.conv = CNN(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=3,
+                            learn_basis_functions=False,
                             hidden_size=model_kwargs["hidden_size"])
             ins = model_kwargs["hidden_size"]
         else:
             ins = input_size[0]
-        self.network = MLP(input_size=(ins, ), output_size=(n_basis,), n_basis=1, **model_kwargs)
+        self.network = MLP(input_size=(ins, ), output_size=(n_basis,), learn_basis_functions=False,  n_basis=1, **model_kwargs)
         self.opt = torch.optim.Adam(self.parameters(), lr=1e-3)
 
     def predict_from_examples(self,
@@ -118,12 +119,12 @@ class ProtoTypicalNetwork(BaseAlg):
             images, training_class_indicies, testing_class_indicies = dataset.prototypical_network_fetch_data_for_computing_prototypes()
             self.compute_prototypes(images, training_class_indicies, testing_class_indicies)
 
-            example_xs, example_ys, xs, ys, _ = dataset.sample()
+            example_xs, example_ys, query_xs, query_ys, _ = dataset.sample()
             info = _
             # we actually need info here because this code was not designed with prototypical networks in mind.
 
             # get embeddings
-            latents = self.network(self.conv(xs))
+            latents = self.network(self.conv(query_xs))
             # get distribution over training classes
             distances = ((latents.unsqueeze(1) - self.prototypes.unsqueeze(0).unsqueeze(2))**2).sum(dim=-1)
             distribution = torch.nn.functional.log_softmax(-distances, dim=1)
@@ -136,7 +137,7 @@ class ProtoTypicalNetwork(BaseAlg):
             distribution = torch.where(mask, -float('inf'), distribution)
 
             # get the correct classes
-            positive_class_indicies = info["positive_class_indicies"].unsqueeze(1).repeat(1, xs.shape[1]//2)
+            positive_class_indicies = info["positive_class_indicies"].unsqueeze(1).repeat(1, query_xs.shape[1]//2)
             negative_class_indicies = info["negative_class_indicies"]
             class_indicies = torch.cat([positive_class_indicies, negative_class_indicies], dim=1)
             # of size n_functions x n_points

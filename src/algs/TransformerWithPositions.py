@@ -57,14 +57,14 @@ class TransformerWithPositions(BaseAlg):
         num_params = 0
 
         if model_type == "CNN":
-            num_params += CNN.predict_number_params(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=2, hidden_size=model_kwargs["hidden_size"])
+            num_params += CNN.predict_number_params(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1,  learn_basis_functions=False, n_layers=2, hidden_size=model_kwargs["hidden_size"])
             input_size = (model_kwargs["hidden_size"],)
 
         # xs encoder
-        num_params += MLP.predict_number_params((input_size[0],), (n_basis,), n_basis=1, hidden_size=model_kwargs["hidden_size"], n_layers=2)
+        num_params += MLP.predict_number_params((input_size[0],), (n_basis,), n_basis=1,  learn_basis_functions=False, hidden_size=model_kwargs["hidden_size"], n_layers=2)
 
         # ys encoder
-        num_params += MLP.predict_number_params((output_size[0],), (n_basis,), n_basis=1, hidden_size=model_kwargs["hidden_size"], n_layers=2)
+        num_params += MLP.predict_number_params((output_size[0],), (n_basis,), n_basis=1,  learn_basis_functions=False, hidden_size=model_kwargs["hidden_size"], n_layers=2)
 
         # transformer
         num_params += predict_number_params_transformer(n_basis, model_kwargs["hidden_size"])
@@ -73,7 +73,7 @@ class TransformerWithPositions(BaseAlg):
         num_params += 2 * model_kwargs["n_examples"] * n_basis
 
         # decoder
-        num_params += MLP.predict_number_params((n_basis,), (output_size[0],), n_basis=1, hidden_size=model_kwargs["hidden_size"], n_layers=2)
+        num_params += MLP.predict_number_params((n_basis,), (output_size[0],), n_basis=1,  learn_basis_functions=False, hidden_size=model_kwargs["hidden_size"], n_layers=2)
         return num_params
 
 
@@ -97,7 +97,7 @@ class TransformerWithPositions(BaseAlg):
 
         # conv net if needed
         if model_type == "CNN":
-            self.conv = CNN(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=2, hidden_size=model_kwargs["hidden_size"])
+            self.conv = CNN(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, learn_basis_functions=False,  n_layers=2, hidden_size=model_kwargs["hidden_size"])
             input_size = (model_kwargs["hidden_size"],)
         self.transformer = torch.nn.Transformer(d_model=n_basis,
                                                 nhead=nheads,
@@ -106,9 +106,9 @@ class TransformerWithPositions(BaseAlg):
                                                 dim_feedforward=hidden_size,
                                                 dropout=0.1,
                                                 batch_first=True)
-        self.encoder_xs = MLP((input_size[0],), (n_basis,), n_basis=1, hidden_size=hidden_size, n_layers=2)
-        self.encoder_ys = MLP(input_size=(output_size[0],), output_size=(n_basis,), n_basis=1, hidden_size=hidden_size, n_layers=2)
-        self.decoder = MLP(input_size=(n_basis,), output_size=(output_size[0],), n_basis=1, hidden_size=hidden_size, n_layers=2)
+        self.encoder_xs = MLP((input_size[0],), (n_basis,), n_basis=1,  learn_basis_functions=False, hidden_size=hidden_size, n_layers=2)
+        self.encoder_ys = MLP(input_size=(output_size[0],), output_size=(n_basis,), n_basis=1,  learn_basis_functions=False, hidden_size=hidden_size, n_layers=2)
+        self.decoder = MLP(input_size=(n_basis,), output_size=(output_size[0],), n_basis=1, learn_basis_functions=False,  hidden_size=hidden_size, n_layers=2)
         self.positional_encoding = torch.nn.Embedding(max_example_size, n_basis)
         self.opt = torch.optim.Adam([ *self.transformer.parameters(),
                                             *self.encoder_xs.parameters(),

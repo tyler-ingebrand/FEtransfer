@@ -61,7 +61,7 @@ def get_number_params(model):
 def get_hidden_size(model:str, train_dataset:BaseDataset, num_params:int, n_basis:int, n_layers:int, n_heads:int):
     model_type = "MLP" if len(train_dataset.input_size) == 1 else "CNN"
     def loss_function(hidden_size):
-        model_kwargs = {"hidden_size": hidden_size, "n_layers": n_layers, "n_heads": n_heads, "oracle_size": train_dataset.oracle_size, "n_examples": train_dataset.n_examples_per_sample}
+        model_kwargs = {"hidden_size": hidden_size, "n_layers": n_layers, "n_heads": n_heads, "oracle_size": train_dataset.oracle_size, "n_examples": train_dataset.n_examples}
         current_num_params = predict_number_params(model, n_basis, train_dataset.input_size, train_dataset.output_size, model_type, model_kwargs)
         return abs(current_num_params - num_params)
 
@@ -167,7 +167,7 @@ def get_model(alg:str, train_dataset:BaseDataset, n_basis:int, n_layers:int, n_h
         return BruteForceMLP(input_size=train_dataset.input_size,
                             output_size=train_dataset.output_size,
                             data_type=train_dataset.data_type,
-                            num_data=train_dataset.n_examples_per_sample,
+                            num_data=train_dataset.n_examples,
                             model_type=model_type,
                             model_kwargs={"hidden_size": hidden_size, "n_layers": n_layers},
                              cross_entropy=cross_entropy,
@@ -177,7 +177,7 @@ def get_model(alg:str, train_dataset:BaseDataset, n_basis:int, n_layers:int, n_h
         return BruteForceBasis(input_size=train_dataset.input_size,
                                 output_size=train_dataset.output_size,
                                 data_type=train_dataset.data_type,
-                                num_data=train_dataset.n_examples_per_sample,
+                                num_data=train_dataset.n_examples,
                                 n_basis=n_basis,
                                 model_type=model_type,
                                 model_kwargs={"hidden_size": hidden_size, "n_layers": n_layers},
@@ -200,7 +200,7 @@ def get_model(alg:str, train_dataset:BaseDataset, n_basis:int, n_layers:int, n_h
                                         output_size=train_dataset.output_size,
                                         data_type=train_dataset.data_type,
                                         n_basis=n_basis,
-                                        max_example_size=2*train_dataset.n_examples_per_sample,
+                                        max_example_size=2*train_dataset.n_examples,
                                         model_type=model_type,
                                         model_kwargs={"hidden_size": hidden_size, "n_layers": n_layers, "n_heads": n_heads},
                                         cross_entropy=cross_entropy,

@@ -17,13 +17,13 @@ class MLPModel(BaseAlg):
 
         n_params = 0
         if model_type == "CNN":
-            n_params += CNN.predict_number_params(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=2, hidden_size=model_kwargs["hidden_size"])
+            n_params += CNN.predict_number_params(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=2,  learn_basis_functions=False, hidden_size=model_kwargs["hidden_size"])
             ins = model_kwargs["hidden_size"]
         else:
             ins = input_size[0]
 
         outs = output_size[0]
-        n_params += MLP.predict_number_params((ins,), (outs,), n_basis=1, **model_kwargs)
+        n_params += MLP.predict_number_params((ins,), (outs,), n_basis=1,  learn_basis_functions=False, **model_kwargs)
 
         return n_params
 
@@ -44,7 +44,7 @@ class MLPModel(BaseAlg):
                                           gradient_accumulation=gradient_accumulation, cross_entropy=cross_entropy)
 
         if self.model_type == "CNN":
-            self.conv = CNN(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=2, hidden_size=model_kwargs["hidden_size"])
+            self.conv = CNN(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, n_layers=2, learn_basis_functions=False,  hidden_size=model_kwargs["hidden_size"])
             ins = model_kwargs["hidden_size"]
         else:
             ins = input_size[0]
@@ -53,7 +53,7 @@ class MLPModel(BaseAlg):
         outs = output_size[0]
 
         # create model and opt
-        self.model = MLP((ins,), (outs,), n_basis=1, **model_kwargs)
+        self.model = MLP((ins,), (outs,), n_basis=1,  learn_basis_functions=False, **model_kwargs)
         self.opt = torch.optim.Adam(self.model.parameters(), lr=1e-3)
 
     def predict_from_examples(self,
