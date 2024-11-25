@@ -4,7 +4,6 @@ import time
 from datetime import datetime
 from typing import Dict, Optional, Tuple
 
-import ffmpeg
 import numpy as np
 import gymnasium as gym
 import argparse
@@ -13,13 +12,7 @@ import torch
 from FunctionEncoder import BaseDataset
 from gymnasium.spaces import Box
 from matplotlib import pyplot as plt
-from stable_baselines3 import PPO
 from tqdm import trange
-import cv2
-
-# automatically add the bin path
-# os.environ['LD_LIBRARY_PATH'] = os.environ.get('LD_LIBRARY_PATH', '') + ':' + os.path.expanduser('~/.mujoco/mujoco210/bin')
-
 
 LEG_LENGTH = (0.2 **2 + 0.2**2)**0.5
 ANKLE_LENGTH = (0.4 **2 + 0.4**2)**0.5
