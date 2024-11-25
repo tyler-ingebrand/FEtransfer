@@ -273,7 +273,10 @@ for k, v in default_sizes.items():
 # generate type3 parameter ranges
 train_type3_parameters = {}
 for k, v in default_sizes.items():
-    train_type3_parameters[k] = (v[0]*2, v[1]*2.5)
+    if "length" in k:
+        train_type1_parameters[k] = (v[0]*2.0, v[1]*2.5)
+    else:
+        train_type1_parameters[k] = (v[0]*1.0, v[1]*1.0)
 
 
 
@@ -386,9 +389,9 @@ def collect_type2_data(num_functions, episode_length=1000, n_examples=200) -> di
 
     # collect data
     for episode in trange(num_functions):
-        # sample values between 0 and 1 to take a linear combination of the two environments.
-        alpha = np.random.uniform(0.0, 1.0)
-        beta = 1 - alpha
+        # sample values between -1 and 1 to take a linear combination of the two environments.
+        alpha = np.random.uniform(-1.0, 1.0)
+        beta = np.random.uniform(-1.0, 1.0)
 
         # reset both envs
         state, info = env.reset()
@@ -446,12 +449,12 @@ def collect_data():
     os.makedirs(save_dir, exist_ok=True)
 
     # if data already exists, exit
-    if (os.path.exists(os.path.join(save_dir, 'train.pt')) and
-        os.path.exists(os.path.join(save_dir, 'type1.pt')) and
-        os.path.exists(os.path.join(save_dir, 'type2.pt')) and
-        os.path.exists(os.path.join(save_dir, 'type3.pt'))):
-        print("MuJoCo data already exists. Skipping.")
-        return
+    # if (os.path.exists(os.path.join(save_dir, 'train.pt')) and
+    #     os.path.exists(os.path.join(save_dir, 'type1.pt')) and
+    #     os.path.exists(os.path.join(save_dir, 'type2.pt')) and
+    #     os.path.exists(os.path.join(save_dir, 'type3.pt'))):
+    #     print("MuJoCo data already exists. Skipping.")
+    #     return
 
     # gather data
     train = collect_type1_data(num_functions=1000, params="type1")

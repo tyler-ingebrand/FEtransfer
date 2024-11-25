@@ -143,8 +143,8 @@ if __name__ == "__main__":
         if type2_dataset: # some datasets don't have type2
             cb_list.append(CustomCallback(train_dataset.data_type, testing_dataset=type2_dataset, prefix="type2", tensorboard=cb_list[0].tensorboard))
         cb_list.append(CustomCallback(train_dataset.data_type, testing_dataset=type3_dataset, prefix="type3", tensorboard=cb_list[0].tensorboard))
-        if args.algorithm in ["LS", "IP", "FE"]:
-            cb_list.append(TensorboardCallback(tensorboard=cb_list[0].tensorboard, prefix="fe_debug"))
+        # if args.algorithm in ["LS", "IP", "FE"]: # note you can do this for debugging purposes. 
+        #     cb_list.append(TensorboardCallback(tensorboard=cb_list[0].tensorboard, prefix="fe_debug"))
         cb_list = ListCallback(cb_list)
 
         # train the model
