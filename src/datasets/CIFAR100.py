@@ -53,7 +53,7 @@ def get_cifar_datasets(device, n_examples, n_functions):
 def plot_cifar(xs, ys, y_hats, example_xs, example_ys, save_dir, type_i, info):
     fig, ax = plt.subplots(4, 12, figsize=(18, 8),
                            gridspec_kw={'width_ratios': [1, 1, 1, 1, 0.2, 1, 1, 1, 1, 0.2, 1, 1]})
-    for row in range(4):
+    for row in range(min(4, xs.shape[0])):
         # positive examples
         for col in range(4):
             ax[row, col].axis("off")

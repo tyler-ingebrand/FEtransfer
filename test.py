@@ -31,7 +31,7 @@ def check_args(args):
     assert args.dataset in acceptable_datasets, f"dataset must be in {acceptable_datasets}, got {args.dataset}"
     assert args.n_params >= 1, f"n_params must be at least 1, got {args.n_params}"
     assert args.n_layers >= 1, f"n_layers must be at least 1, got {args.n_layers}"
-    assert args.device in ["cpu", "cuda"] or type(args.device) is int, f"device must be in ['cpu', 'cuda'] or an integer, got {args.device}"
+    assert args.device in ["cpu", "cuda"] + [f"cuda:{i}" for i in range(8)], f"device must be in ['cpu', 'cuda'] or an integer, got {args.device}"
     if args.algorithm == "Siamese":
         if not args.dataset == "CIFAR":
             print("Siamese algorithm only works with classificiation datasets (CIFAR)")
@@ -44,7 +44,7 @@ def check_args(args):
         if not args.dataset == "CIFAR":
             print("Cross entropy loss only works with classification datasets (CIFAR)")
             exit()
-        if not args.algorithm not in ["LS", "IP"]: 
+        if args.algorithm in ["LS", "IP"]:
             print("Function Encoders require inner product based loss functions, not cross entropy.")
             exit()
         if args.algorithm in ["Siamese", "Proto"]:
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     # find device
     if args.device == "auto":
         args.device = "cuda" if torch.cuda.is_available() else "cpu"
-    if type(args.device) is int:
+    elif args.device not in ["cpu", "cuda"]:
         args.device = f"cuda:{args.device}"
 
     # load arguments if they exist

@@ -442,12 +442,12 @@ def collect_data():
     os.makedirs(save_dir, exist_ok=True)
 
     # if data already exists, exit
-    # if (os.path.exists(os.path.join(save_dir, 'train.pt')) and
-    #     os.path.exists(os.path.join(save_dir, 'type1.pt')) and
-    #     os.path.exists(os.path.join(save_dir, 'type2.pt')) and
-    #     os.path.exists(os.path.join(save_dir, 'type3.pt'))):
-    #     print("MuJoCo data already exists. Skipping.")
-    #     return
+    if (os.path.exists(os.path.join(save_dir, 'train.pt')) and
+        os.path.exists(os.path.join(save_dir, 'type1.pt')) and
+        os.path.exists(os.path.join(save_dir, 'type2.pt')) and
+        os.path.exists(os.path.join(save_dir, 'type3.pt'))):
+        print("MuJoCo data already exists. Skipping.")
+        return
 
     # gather data
     train = collect_type1_data(num_functions=1000, params="type1")
