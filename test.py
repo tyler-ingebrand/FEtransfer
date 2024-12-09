@@ -143,12 +143,12 @@ if __name__ == "__main__":
         if type2_dataset: # some datasets don't have type2
             cb_list.append(CustomCallback(train_dataset.data_type, testing_dataset=type2_dataset, prefix="type2", tensorboard=cb_list[0].tensorboard))
         cb_list.append(CustomCallback(train_dataset.data_type, testing_dataset=type3_dataset, prefix="type3", tensorboard=cb_list[0].tensorboard))
-        # if args.algorithm in ["LS", "IP", "FE"]: # note you can do this for debugging purposes. 
-        #     cb_list.append(TensorboardCallback(tensorboard=cb_list[0].tensorboard, prefix="fe_debug"))
+        if args.algorithm in ["LS", "IP", "FE"]: # note you can do this for debugging purposes.
+            cb_list.append(TensorboardCallback(tensorboard=cb_list[0].tensorboard, prefix="fe_debug"))
         cb_list = ListCallback(cb_list)
 
         # train the model
-        model.train_model(train_dataset, epochs=args.epochs, callback=cb_list)
+        model.train_model(train_dataset, epochs=args.epochs, callback=cb_list, lambd=1e-3)
 
         # save the model
         torch.save(model.state_dict(), f"{save_dir}/model.pth")
@@ -166,7 +166,17 @@ if __name__ == "__main__":
                 continue
 
             # get data
+            dataset.n_examples = 10000
             example_xs, example_ys, xs, ys, info = dataset.sample()
+
+            # if using function encoder, estimate L2 distance
+            if args.algorithm in ["FE", "IP", "LS"]:
+                l2_distance = model.estimate_L2_error(example_xs, example_ys)
+                l2_distance_2 = model._distance(example_ys, model.predict_from_examples(example_xs, example_ys, example_xs, method="least_squares"), squared=False)
+                print(f"L2 distance: {l2_distance}")
+                print(f"L2 distance 2: {l2_distance_2}")
+                print()
+                info["L2_distance"] = l2_distance
 
             # get predictions
             if type(model) == Oracle or type(model) == ProtoTypicalNetwork:

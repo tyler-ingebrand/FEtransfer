@@ -157,8 +157,8 @@ class SevenScenesDataset(BaseDataset):
             self.scenes_sequences_images[scene] = {}
             for sequence in self.scenes_sequencies[scene]:
                 self.scenes_sequences_images[scene][sequence] = {}
-                self.scenes_sequences_images[scene][sequence]["images"] = torch.load(os.path.join(scenes_dir, scene, sequence, "images.pt"), weights_only=True, map_location="cpu")
-                self.scenes_sequences_images[scene][sequence]["poses"] = torch.load(os.path.join(scenes_dir, scene, sequence, "labels.pt"), weights_only=True, map_location="cpu")
+                self.scenes_sequences_images[scene][sequence]["images"] = torch.load(os.path.join(scenes_dir, scene, sequence, "images.pt"), weights_only=True, map_location=self.device)
+                self.scenes_sequences_images[scene][sequence]["poses"] = torch.load(os.path.join(scenes_dir, scene, sequence, "labels.pt"), weights_only=True, map_location=self.device)
 
         # oracle information, hardcoded so its consistent
         self.oracle_index = {"chess":

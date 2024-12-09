@@ -119,6 +119,9 @@ def plot_polynomial(xs, ys, y_hats, example_xs, example_ys, save_dir, type_i, in
         ax.plot(x.cpu(), y_hat.cpu(), label="Estimate")
         if i == 8:
             ax.legend()
+        if "L2_distance" in info:
+            # add text to plot
+            ax.text(0.05, 0.05, f"$Est. L^2$ Distance Squared: {info['L2_distance'][i].cpu():.2f}", horizontalalignment='left', verticalalignment='bottom', transform=ax.transAxes)
 
     plt.tight_layout()
     plt.savefig(f"{save_dir}/type{type_i+1}.png")
