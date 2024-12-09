@@ -9,7 +9,7 @@ from names import *
 if __name__ == "__main__":
     algs = "LS IP AE Transformer TFE Oracle BFB BF MAML1 MAML5 Siamese Proto".split(" ")
     datasets = "Polynomial CIFAR 7Scenes Ant".split(" ")
-    logdir = "logs"
+    logdir = "logs/experiment"
 
     for dataset in datasets:
         if not os.path.exists(os.path.join(logdir, dataset)):

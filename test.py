@@ -13,6 +13,7 @@ from src.algs.PrototypicalNetwork import ProtoTypicalNetwork
 from src.algs.get_model import get_model, predict_number_params, get_number_params, get_hidden_size
 from src.datasets.get_dataset import get_datasets, get_plotting_function
 from src.algs.Oracle import Oracle
+from src.algs.Transformer import get_gradient_accumulation_steps
 
 
 def load_args(args):
@@ -78,6 +79,8 @@ if __name__ == "__main__":
     # load arguments if they exist
     if args.load_dir is not None:
         args = load_args(args)
+    if args.device == "cpu":
+        print("WARNING: Running on CPU. This will be slow.")
 
     # check arguments for valid settings only.
     check_args(args)
@@ -90,8 +93,8 @@ if __name__ == "__main__":
 
     # set gradient accumulation for transformer since it devours memory
     if args.algorithm == "Transformer":
-        args.gradient_accumulation = 10
-        args.num_functions = 1
+        args.gradient_accumulation = get_gradient_accumulation_steps(args.dataset)
+        args.num_functions = 10 // args.gradient_accumulation
         args.epochs = args.epochs * args.gradient_accumulation
     else:
         args.gradient_accumulation = 1

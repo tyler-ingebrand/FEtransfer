@@ -141,3 +141,23 @@ class Transformer(BaseAlg):
         # decode outputs
         output = self.decoder(output_embedding)
         return output
+
+
+def get_gradient_accumulation_steps(dataset):
+    # get the amount of GPU memory available
+    device = torch.device("cuda")
+    total_memory = torch.cuda.get_device_properties(device).total_memory
+    total_memory = total_memory / 1024 / 1024 / 1024 # GB
+
+    if total_memory < 15: # GB
+        return 10
+    else:
+        if dataset == "Polynomial":
+            return 5
+        if dataset == "CIFAR":
+            return 1
+        if dataset == "7Scenes":
+            return 1
+        if dataset == "Ant":
+            return 5
+
