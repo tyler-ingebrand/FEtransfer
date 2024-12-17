@@ -128,7 +128,7 @@ if __name__ == "__main__":
     model_type = model.model_type
     model_kwargs = {"hidden_size": args.hidden_size, "n_layers": args.n_layers, "n_heads": args.n_heads, "oracle_size": type1_dataset.oracle_size, "n_examples": type1_dataset.n_examples}
     estimated_n_params = predict_number_params(args.algorithm, args.n_basis, type1_dataset.input_size, type1_dataset.output_size, model_type, model_kwargs)
-    # assert model_n_params == estimated_n_params, f"Model has {model_n_params} parameters, but expected {estimated_n_params} parameters."
+    assert model_n_params == estimated_n_params, f"Model has {model_n_params} parameters, but expected {estimated_n_params} parameters."
     print("Running ", args.algorithm, " on ", args.dataset)
     print("Number of parameters:", model_n_params)
     print("Hidden size:", args.hidden_size)

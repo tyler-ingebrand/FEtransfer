@@ -119,7 +119,7 @@ def get_model(alg:str, train_dataset:BaseDataset, n_basis:int, n_layers:int, n_h
                                model_type=model_type,
                                n_basis=n_basis,
                                model_kwargs={"hidden_size": hidden_size, "n_layers": n_layers},
-                               use_residuals_method=True,
+                               use_residuals_method=False,
                                method="least_squares",
                                gradient_accumulation=gradient_accumulation,
                                optimizer=opti,
