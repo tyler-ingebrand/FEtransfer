@@ -75,15 +75,15 @@ class TransformerFunctionalEncoding(BaseAlg):
             self.conv = CNN(input_size=input_size, output_size=(model_kwargs["hidden_size"],), n_basis=1, learn_basis_functions=False, n_layers=4, hidden_size=model_kwargs["hidden_size"])
             input_size = (model_kwargs["hidden_size"], )
 
-        encoder_layer = torch.nn.TransformerEncoderLayer(d_model=n_basis, nhead=nheads, dim_feedforward=hidden_size, batch_first=True)
+        encoder_layer = torch.nn.TransformerEncoderLayer(d_model=n_basis, nhead=nheads, dim_feedforward=hidden_size, batch_first=True, layer_norm_eps=1e-3)
         self.transformer = torch.nn.TransformerEncoder(encoder_layer, num_layers=4)
         self.encoder_examples = MLP((input_size[0] + output_size[0],), (n_basis,), n_basis=1,  learn_basis_functions=False, hidden_size=hidden_size, n_layers=2)
         self.basis_functions = MLP(input_size=input_size, output_size=output_size, n_basis=n_basis, hidden_size=hidden_size, n_layers=model_kwargs["n_layers"])
         self.decoder = MLP((n_basis,), (n_basis,), n_basis=1,  learn_basis_functions=False, hidden_size=hidden_size, n_layers=2)
-        self.opt = torch.optim.Adam([ *self.transformer.parameters(),
+        self.opt = torch.optim.AdamW([ *self.transformer.parameters(),
                                             *self.encoder_examples.parameters(),
                                             *self.basis_functions.parameters(),
-                                            *self.decoder.parameters()], lr=1e-3)
+                                            *self.decoder.parameters()], lr=1e-3, weight_decay=1e-2)
 
     def predict_from_examples(self,
                 example_xs: torch.tensor, # F x B1 x N size

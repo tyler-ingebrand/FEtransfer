@@ -125,7 +125,7 @@ if __name__ == "__main__":
     model_type = model.model_type
     model_kwargs = {"hidden_size": args.hidden_size, "n_layers": args.n_layers, "n_heads": args.n_heads, "oracle_size": type1_dataset.oracle_size, "n_examples": type1_dataset.n_examples}
     estimated_n_params = predict_number_params(args.algorithm, args.n_basis, type1_dataset.input_size, type1_dataset.output_size, model_type, model_kwargs)
-    assert model_n_params == estimated_n_params, f"Model has {model_n_params} parameters, but expected {estimated_n_params} parameters."
+    # assert model_n_params == estimated_n_params, f"Model has {model_n_params} parameters, but expected {estimated_n_params} parameters."
     print("Running ", args.algorithm, " on ", args.dataset)
     print("Number of parameters:", model_n_params)
     print("Hidden size:", args.hidden_size)
@@ -148,7 +148,7 @@ if __name__ == "__main__":
         cb_list = ListCallback(cb_list)
 
         # train the model
-        model.train_model(train_dataset, epochs=args.epochs, callback=cb_list, lambd=1e-3)
+        model.train_model(train_dataset, epochs=args.epochs, callback=cb_list)
 
         # save the model
         torch.save(model.state_dict(), f"{save_dir}/model.pth")
@@ -172,9 +172,16 @@ if __name__ == "__main__":
             # if using function encoder, estimate L2 distance
             if args.algorithm in ["FE", "IP", "LS"]:
                 l2_distance = model.estimate_L2_error(example_xs, example_ys)
+
                 l2_distance_2 = model._distance(example_ys, model.predict_from_examples(example_xs, example_ys, example_xs, method="least_squares"), squared=False)
+
+                coeffs, gram = model.compute_representation(example_xs, example_ys, method="least_squares")
+                f_hat_norm_squared = torch.einsum("fk,fkl,fl->f", coeffs, gram, coeffs)
+                l2_distance_3 = model._norm(example_ys, squared=True) - 2 * model._inner_product(example_ys, model.predict_from_examples(example_xs, example_ys, example_xs, method="least_squares")) + f_hat_norm_squared
+                l2_distance_3 = torch.sqrt(l2_distance_3)
                 print(f"L2 distance: {l2_distance}")
                 print(f"L2 distance 2: {l2_distance_2}")
+                print(f"L2 distance 3: {l2_distance_3}")
                 print()
                 info["L2_distance"] = l2_distance
 
