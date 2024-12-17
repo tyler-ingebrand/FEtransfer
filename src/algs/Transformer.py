@@ -101,11 +101,12 @@ class Transformer(BaseAlg):
                                                 num_decoder_layers=4,
                                                 dim_feedforward=hidden_size,
                                                 dropout=0.1,
-                                                batch_first=True)
+                                                batch_first=True,
+                                                layer_norm_eps=1e-3)
         self.encoder_examples = MLP((input_size[0] + output_size[0],), (n_basis,), n_basis=1,  learn_basis_functions=False, hidden_size=hidden_size, n_layers=2)
         self.encoder_prediction = MLP(input_size=(input_size[0],), output_size=(n_basis,), n_basis=1,  learn_basis_functions=False, hidden_size=hidden_size, n_layers=2)
         self.decoder = MLP(input_size=(n_basis,), output_size=(output_size[0],), n_basis=1,  learn_basis_functions=False, hidden_size=hidden_size, n_layers=2)
-        self.opt = torch.optim.Adam([ *self.transformer.parameters(),
+        self.opt = torch.optim.AdamW([ *self.transformer.parameters(),
                                             *self.encoder_examples.parameters(),
                                             *self.encoder_prediction.parameters(),
                                             *self.decoder.parameters()], lr=1e-3)
