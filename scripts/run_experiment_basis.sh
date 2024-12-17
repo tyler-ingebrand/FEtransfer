@@ -1,7 +1,7 @@
 #!/bin/bash
-
+exit 0
 # Number of GPUs
-NUM_GPUS=1
+NUM_GPUS=5
 
 # Maximum number of processes per GPU
 PROCESSES_PER_GPU=1
@@ -89,7 +89,7 @@ manage_queue() {
 ALGS="LS IP"
 DATASETS="Polynomial CIFAR 7Scenes Ant"
 N_BASIS="1 2 3 5 10 20 40 60 80 100"
-EPOCHS=10
+EPOCHS=50000
 job_list=()
 total_count=0
 

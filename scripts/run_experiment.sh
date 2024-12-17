@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Number of GPUs
-NUM_GPUS=1
+NUM_GPUS=5
 
 # Maximum number of processes per GPU
 PROCESSES_PER_GPU=1
@@ -86,7 +86,7 @@ manage_queue() {
 
 # ALGS="LS IP AE Transformer TFE Oracle BFB BF MAML1 MAML5 Siamese Proto"
 # DATASETS="Polynomial CIFAR 7Scenes Ant"
-ALGS="LS AE"
+ALGS="LS IP AE TFE Oracle BFB BF MAML1 MAML5 Siamese Proto"
 DATASETS="Ant"
 EPOCHS=50000
 job_list=()

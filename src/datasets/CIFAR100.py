@@ -134,4 +134,4 @@ def plot_cifar(xs, ys, y_hats, example_xs, example_ys, save_dir, type_i, info):
 
 
 if __name__ == "__main__":
-    d = ModifiedCIFAR(device="cpu", n_examples_per_sample=10, split="train")
+    d = ModifiedCIFAR(device="cpu", n_examples=10, split="train")

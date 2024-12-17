@@ -170,3 +170,4 @@ src/datasets/7ScenesData/
 src/datasets/MuJoCo/
 *.png
 nohup.out
+conda_command.txt

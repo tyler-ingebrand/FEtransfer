@@ -257,19 +257,21 @@ class VariableAntEnv(gym.Env):
 train_type1_parameters = {}
 default_sizes = VariableAntEnv.default_dynamics_variable_ranges()
 for k, v in default_sizes.items():
-    if "length" in k:
-        train_type1_parameters[k] = (v[0]*0.5, v[1]*1.5)
-    else:
-        train_type1_parameters[k] = (v[0]*1.0, v[1]*1.0)
+    train_type1_parameters[k] = (v[0]*0.5, v[1]*1.5)
+    # if "length" in k:
+    #     train_type1_parameters[k] = (v[0]*0.5, v[1]*1.5)
+    # else:
+    #     train_type1_parameters[k] = (v[0]*1.0, v[1]*1.0)
 # type 2 will be linear combinations of these parameter dynamics (not the parameters themselves)
 
 # generate type3 parameter ranges
 train_type3_parameters = {}
 for k, v in default_sizes.items():
-    if "length" in k:
-        train_type1_parameters[k] = (v[0]*2.0, v[1]*2.5)
-    else:
-        train_type1_parameters[k] = (v[0]*1.0, v[1]*1.0)
+    train_type1_parameters[k] = (v[0]*2.0, v[1]*2.5)
+    # if "length" in k:
+    #     train_type1_parameters[k] = (v[0]*2.0, v[1]*2.5)
+    # else:
+    #     train_type1_parameters[k] = (v[0]*1.0, v[1]*1.0)
 
 
 
@@ -279,9 +281,6 @@ for k, v in default_sizes.items():
 
 
 def visualize():
-    foot_min, foot_max = ANKLE_LENGTH / 2, ANKLE_LENGTH * 1.5
-    leg_min, leg_max = LEG_LENGTH, LEG_LENGTH * 1.5
-    gear_min, gear_max = 60, 60
     hps = train_type1_parameters
     env = VariableAntEnv(hps, render_mode='human')
     env2 = VariableAntEnv(hps, render_mode='human')
@@ -435,19 +434,19 @@ def collect_type2_data(num_functions, episode_length=1000, n_examples=200) -> di
     return results
 
 
-def collect_data():
+def collect_data(force=False):
     # get save dir
     this_file_path = os.path.abspath(__file__)
     save_dir = os.path.join(os.path.dirname(this_file_path), 'MuJoCo')
     os.makedirs(save_dir, exist_ok=True)
 
     # if data already exists, exit
-    # if (os.path.exists(os.path.join(save_dir, 'train.pt')) and
-    #     os.path.exists(os.path.join(save_dir, 'type1.pt')) and
-    #     os.path.exists(os.path.join(save_dir, 'type2.pt')) and
-    #     os.path.exists(os.path.join(save_dir, 'type3.pt'))):
-    #     print("MuJoCo data already exists. Skipping.")
-    #     return
+    if not force and (os.path.exists(os.path.join(save_dir, 'train.pt')) and
+        os.path.exists(os.path.join(save_dir, 'type1.pt')) and
+        os.path.exists(os.path.join(save_dir, 'type2.pt')) and
+        os.path.exists(os.path.join(save_dir, 'type3.pt'))):
+        print("MuJoCo data already exists. Skipping.")
+        return
 
     # gather data
     train = collect_type1_data(num_functions=1000, params="type1")
@@ -460,8 +459,8 @@ def collect_data():
     xs_stds = train['xs'].std(dim=(0, 1), keepdim=True)
     ys_means = xs_means[:, :, :29]
     ys_stds = xs_stds[:, :, :29] # note the first 29 dimensions are the state space, which is the same as the ys. We reuse the normalization so that we can compare the state-next state later in the same units.
-    hp_means = train['hidden_params'].mean(dim=(0, 1), keepdim=True) # this is for the oracle. No other algs use this.
-    hp_stds = train['hidden_params'].std(dim=(0, 1), keepdim=True)
+    hp_means = train['hidden_params'].mean(dim=(0), keepdim=True) # this is for the oracle. No other algs use this.
+    hp_stds = train['hidden_params'].std(dim=(0), keepdim=True)
     for dataset in [train, type1, type2, type3]:
         dataset['xs'] = (dataset['xs'] - xs_means) / xs_stds
         dataset['ys'] = (dataset['ys'] - ys_means) / ys_stds
@@ -612,6 +611,7 @@ def plot_ant(xs, ys, y_hats, example_xs, example_ys, save_dir, type_i, info):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--visualize', action='store_true')
+    parser.add_argument('--force', action='store_true')
     args = parser.parse_args()
     vis = args.visualize
 
@@ -620,4 +620,4 @@ if __name__ == '__main__':
         visualize()
     # collect and save data
     else:
-        collect_data()
+        collect_data(args.force)
