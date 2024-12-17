@@ -267,7 +267,7 @@ for k, v in default_sizes.items():
 # generate type3 parameter ranges
 train_type3_parameters = {}
 for k, v in default_sizes.items():
-    train_type1_parameters[k] = (v[0]*2.0, v[1]*2.5)
+    train_type3_parameters[k] = (v[0]*2.0, v[1]*2.5)
     # if "length" in k:
     #     train_type1_parameters[k] = (v[0]*2.0, v[1]*2.5)
     # else:
@@ -283,34 +283,26 @@ for k, v in default_sizes.items():
 def visualize():
     hps = train_type1_parameters
     env = VariableAntEnv(hps, render_mode='human')
-    env2 = VariableAntEnv(hps, render_mode='human')
-    env2.reset()
     # loop and render to make sure its working
     try:
         for _ in range(10_000):
             if _ % 100 == 0:
                 env.close()
-                env2.close()
                 obs, info = env.reset()
-
-            # copy state over
-            env2.set_state(*env.get_state()[1])
-            obs2 = env2.get_state()[0]
-
+                print(info["dynamics"])
             # render
             env.render()
             time.sleep(0.01)
 
             # step envs
             n_obs, r, term, trunc, info = env.step(env.action_space.sample())
-            n_obs2, r, term, trunc, info = env2.step(env.action_space.sample())
 
             # see if we can mimic the state
-            env2.render()
+            env.render()
     except KeyboardInterrupt:
         pass
+    print("Exiting")
     env.close()
-    env2.close()
 
 def collect_type1_data(num_functions, params, episode_length=1000, n_examples=200) -> dict:
     # create env
