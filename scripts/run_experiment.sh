@@ -84,9 +84,10 @@ manage_queue() {
   wait
 }
 
-ALGS="LS IP AE Transformer TFE Oracle BFB BF MAML1 MAML5 Siamese Proto"
+# ALGS="LS IP AE Transformer TFE Oracle BFB BF MAML1 MAML5 Siamese Proto"
 # DATASETS="Polynomial CIFAR 7Scenes Ant"
-DATASETS="7Scenes Ant"
+ALGS="LS IP AE TFE Oracle BFB BF MAML1 MAML5 Siamese Proto"
+DATASETS="Ant"
 EPOCHS=50000
 job_list=()
 total_count=0
@@ -94,7 +95,7 @@ total_count=0
 # Main experiments using L2 based loss
 for dataset in $DATASETS; do
    for alg in $ALGS; do
-     for seed in {1..10}; do
+     for seed in {1..1}; do
          job_list+=("$dataset $alg $seed $total_count")
          total_count=$((total_count + 1))
      done

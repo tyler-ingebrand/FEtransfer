@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     algs = "LS IP AE Transformer TFE Oracle BFB BF MAML1 MAML5 Siamese Proto".split(" ")
     # datasets = "Polynomial CIFAR 7Scenes Ant".split(" ")
-    datasets = "7Scenes".split(" ")
+    datasets = "CIFAR".split(" ")
     logdir = "logs/experiment"
     tags = ["type1/accuracy", "type1/mean_distance_squared",
             "type2/accuracy", "type2/mean_distance_squared",
