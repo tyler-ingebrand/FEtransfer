@@ -6,10 +6,16 @@ import matplotlib.pyplot as plt
 
 from names import *
 
+
+def smooth(ys):
+    """smooths a list of values"""
+    return [np.mean(ys[max(0, i-10):i+10]) for i in range(len(ys))]
+
+
 if __name__ == "__main__":
     algs = "LS IP AE Transformer TFE Oracle BFB BF MAML1 MAML5 Siamese Proto".split(" ")
     datasets = "Polynomial CIFAR 7Scenes Ant".split(" ")
-    logdir = "logs"
+    logdir = "logs/experiment"
 
     for dataset in datasets:
         if not os.path.exists(os.path.join(logdir, dataset)):
@@ -62,12 +68,16 @@ if __name__ == "__main__":
                 seeds = list(data[alg].keys())
                 if len(seeds) == 0:
                     continue
-                values = np.array([data[alg][seed][tag] for seed in seeds])
+                values = [data[alg][seed][tag] for seed in seeds]
+                shortest = min([len(v) for v in values])
+                values = np.array([v[:shortest] for v in values])
                 median = np.median(values, axis=0)
                 min_val = np.min(values, axis=0)
                 max_val = np.max(values, axis=0)
+
+                median, min_val, max_val = smooth(median), smooth(min_val), smooth(max_val)
                 axs[i].plot(median, label=alg_names[alg], color=alg_colors[alg])
-                axs[i].fill_between(range(len(median)), min_val, max_val, color=alg_colors[alg], alpha=0.2)
+                axs[i].fill_between(range(len(median)), min_val, max_val, color=alg_colors[alg], alpha=0.2, lw=0)
         axs[i].legend()
         plt.tight_layout()
         plt.savefig(os.path.join(logdir, dataset, "results.png"))

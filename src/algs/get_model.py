@@ -14,6 +14,7 @@ from src.algs.Siamese import SiameseNetwork
 from src.algs.Transformer import Transformer
 from src.algs.TransformerFunctionalEncoding import TransformerFunctionalEncoding
 from src.algs.TransformerWithPositions import TransformerWithPositions
+from src.datasets.CIFAR100 import ModifiedCIFAR
 
 def predict_number_params(alg:str, n_basis:int, input_size:tuple[int], output_size:tuple[int], model_type, model_kwargs):
     num_params = 0
@@ -100,6 +101,17 @@ def get_hidden_size(model:str, train_dataset:BaseDataset, num_params:int, n_basi
 
 def get_model(alg:str, train_dataset:BaseDataset, n_basis:int, n_layers:int, n_heads:int, hidden_size:int, maml_steps:int, cross_entropy:bool=False, maml_internal_learning_rate=None, device="cuda", gradient_accumulation=1):
     model_type = "MLP" if len(train_dataset.input_size) == 1 else "CNN"
+    if type(train_dataset) is ModifiedCIFAR: 
+        # note this is not strictly necesarry. Without it, algos tend to display a classic overfitting curve on CIFAR.
+        # This is due to the inherent input space transfer, rather than output space/task transfer.
+        # if you dont use this, the peak performance will be the same, but you need a validation set to choose the best model.
+        opti = torch.optim.AdamW
+        kwargs = {"lr": 1e-3, "weight_decay": 1e-0}
+    else:
+        opti = torch.optim.Adam
+        kwargs = {"lr": 1e-3}
+
+
     if alg == "FE" or alg == "LS": # least squares generally performs better than inner product, so its the default for the function encoder.
         return FunctionEncoder(input_size=train_dataset.input_size,
                                output_size=train_dataset.output_size,
@@ -110,6 +122,8 @@ def get_model(alg:str, train_dataset:BaseDataset, n_basis:int, n_layers:int, n_h
                                use_residuals_method=False,
                                method="least_squares",
                                gradient_accumulation=gradient_accumulation,
+                               optimizer=opti,
+                               optimizer_kwargs=kwargs
                                ).to(device)
     elif alg == "IP":
         return FunctionEncoder(input_size=train_dataset.input_size,
@@ -183,6 +197,8 @@ def get_model(alg:str, train_dataset:BaseDataset, n_basis:int, n_layers:int, n_h
                                 model_kwargs={"hidden_size": hidden_size, "n_layers": n_layers},
                                cross_entropy=cross_entropy,
                                gradient_accumulation=gradient_accumulation,
+                               optimizer=opti,
+                                optimizer_kwargs=kwargs
                                ).to(device)
     elif "MAML" in alg:
         return MAML(input_size=train_dataset.input_size,

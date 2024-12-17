@@ -40,6 +40,8 @@ class BruteForceBasis(BaseAlg):
                  model_kwargs :dict =dict(),
                  gradient_accumulation :int =1,
                  cross_entropy: bool = False,
+                 optimizer: torch.optim.Optimizer = torch.optim.Adam,
+                 optimizer_kwargs: dict = {"lr": 1e-3},
                  ):
         super(BruteForceBasis, self).__init__(input_size=input_size, output_size=output_size, data_type=data_type,
                                           n_basis=n_basis, model_type=model_type, model_kwargs=model_kwargs,
@@ -66,7 +68,7 @@ class BruteForceBasis(BaseAlg):
         params = [*self.example_to_basis.parameters()] + [*self.basis.parameters()]
         if model_type == "CNN":
             params += [*self.conv.parameters()]
-        self.opt = torch.optim.Adam(params, lr=1e-3)
+        self.opt = optimizer(params, **optimizer_kwargs)
 
 
     def predict_from_examples(self,
