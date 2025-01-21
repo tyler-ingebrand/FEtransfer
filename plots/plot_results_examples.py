@@ -10,6 +10,7 @@ from names import *
 plt.rcParams.update({'font.size': FONT_SIZE})
 plt.rcParams.update({'font.family': FONT})
 
+
 def smooth(ys, size=20):
     """smooths a list of values"""
     return np.array([np.mean(ys[max(0, i-size):i+size]) for i in range(len(ys))])
@@ -42,20 +43,24 @@ def safe_med_min_min(values):
 
 
 if __name__ == "__main__":
-    algs = "LS IP AE Transformer TFE Oracle BFB BF MAML1 MAML5 Siamese Proto".split(" ")
-    algs.reverse()
+    alg = "LS"
     datasets = "Polynomial CIFAR 7Scenes Ant".split(" ")
-    datasets = "CIFAR".split(" ")
-    logdir = "logs/experiment"
+    logdir = "logs/examples"
+    n_ex = "10 20 40 60 80 100 150 200 400 600 800 1000".split(" ")
+    n_ex = [int(n) for n in n_ex]
 
     for dataset in datasets:
         if not os.path.exists(os.path.join(logdir, dataset)):
             print(f"Skipping {dataset} because it does not exist.")
-            print("If you think this is an error, run collect_tensorboards.py first.")
+            print("If you think this is an error, run collect_tensorboards_basis.py first.")
             continue
         print(f"Plotting {dataset}")
-        data = torch.load(f"{logdir}/{dataset}/data.pth", weights_only=False)
-
+        try:
+            data = torch.load(f"{logdir}/{dataset}/data.pth", weights_only=False)
+        except FileNotFoundError:
+            print(f"Skipping {dataset} because it does not exist.")
+            print("If you think this is an error, run collect_tensorboards_basis.py first.")
+            continue
         # for categorical data, accuracy is the ultimate metric
         if dataset == "CIFAR":
             tags = [ "train/accuracy", "type1/accuracy", "type3/accuracy"]
@@ -75,9 +80,9 @@ if __name__ == "__main__":
         # plot each tag
         for i, tag in enumerate(tags):
             title = titles[tag]
-            yax = yaxis[tag]
+            yax = yaxis[tag] + "\n(After 50k Gradient Steps)"
             axs[i].set_title(title)
-            axs[i].set_xlabel("Gradient Step")
+            axs[i].set_xlabel("Number of Example Data Points")
             if i == 0:
                 axs[i].set_ylabel(yax)
 
@@ -91,60 +96,36 @@ if __name__ == "__main__":
                     axs[i].set_ylim(maybe_lims)
                 axs[i].set_yscale("log")
 
-            # set x labels as [0, 12500 25000 37500 50000]
-            axs[i].set_xticks([0, 12500, 25000, 37500, 50000])
-
             # plot each alg for each tag
-            for alg in algs:
-                if alg not in data:
+            mins, maxs, meds = [], [], []
+            for n in n_ex:
+                if n not in data:
                     continue
-
                 # gather the median, min, and max of all seeds
-                seeds = list(data[alg].keys())
+                seeds = list(data[n].keys())
                 if len(seeds) == 0:
                     continue
-                values = [data[alg][seed][tag] for seed in seeds]
+                if not tag in data[n][1]:
+                    continue
+                values = [data[n][seed][tag] for seed in seeds]
                 shortest = min([len(v) for v in values])
-                values = np.array([v[:shortest] for v in values])
-                median, min_val, max_val = safe_med_min_min(values)
-                median, min_val, max_val = smooth(median), smooth(min_val), smooth(max_val)
+                assert shortest >= 50000, f"One alg did not finish training. len={shortest}, should be 50000"
+                values = np.array([v[-50:].mean() for v in values])
+                minn, maxx, median = np.min(values), np.max(values), np.median(values)
+                mins.append(minn)
+                maxs.append(maxx)
+                meds.append(median)
+                
 
-                if title == "Type 3 Transfer":
-                    label = alg_names[alg]
-                else:
-                    label = None
-                axs[i].plot(median, label=label, color=alg_colors[alg])
-                axs[i].fill_between(range(len(median)), min_val, max_val, color=alg_colors[alg], alpha=0.2, lw=0)
-        
-        # reverse label order
-        handles, labels = axs[-1].get_legend_handles_labels()
-        handles, labels = handles[::-1], labels[::-1]
 
-        # make thickness of lines in legend thicker
-        # for h in handles:
-        #     h.set_linewidth(5)
 
-        # plots below axs
-        if dataset == "CIFAR":
-            ncol = len(algs) // 2
-            bbox = (0.5, -0.035)
-            bottom = 0.255
-        else:
-            ncol = len(algs)
-            bbox = (0.5, -0.030)
-            bottom = 0.19
-        ncol = len(algs) // 2 if dataset == "CIFAR" else len(algs)
-        
-        leg = fig.legend(handles, labels, loc="lower center", ncol=ncol, fontsize=FONT_SIZE, frameon=False, bbox_to_anchor=bbox)
-
-        # make the legend lines thicker
-        for h in leg.get_lines():
-            h.set_linewidth(5)
-        
+            n_ex = n_ex[:len(meds)]
+            axs[i].plot(n_ex, meds, color=alg_colors[alg])
+            axs[i].fill_between(n_ex, mins, maxs, color=alg_colors[alg], alpha=0.2, lw=0)
+               
         
         plt.tight_layout()
-        plt.subplots_adjust(bottom=bottom)  # Increase bottom margin slightly for space
-        plt.savefig(os.path.join(logdir, dataset, "results.png"))
+        plt.savefig(os.path.join(logdir, dataset, f"examples_{dataset}.png"))
 
 
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-exit 0
+
 # Number of GPUs
 NUM_GPUS=5
 
@@ -86,7 +86,7 @@ manage_queue() {
   wait
 }
 
-ALGS="LS IP"
+ALGS="LS"
 DATASETS="Polynomial CIFAR 7Scenes Ant"
 N_BASIS="1 2 3 5 10 20 40 60 80 100"
 EPOCHS=50000

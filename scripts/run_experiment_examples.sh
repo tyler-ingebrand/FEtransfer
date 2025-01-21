@@ -1,5 +1,5 @@
 #!/bin/bash
-exit 0
+
 # Number of GPUs
 NUM_GPUS=5
 
@@ -86,9 +86,9 @@ manage_queue() {
   wait
 }
 
-ALGS="LS IP AE Transformer TFE Oracle BFB BF MAML1 MAML5 Siamese Proto"
+ALGS="LS"
 DATASETS="Polynomial CIFAR 7Scenes Ant"
-N_EXAMPLES="10 20 40 60 80 100 150 200"
+N_EXAMPLES="10 20 40 60 80 100 150 200 400 600 800 1000"
 EPOCHS=50000
 job_list=()
 total_count=0

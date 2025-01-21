@@ -1,5 +1,6 @@
 #!/bin/bash
-exit 0
+
+
 # Number of GPUs
 NUM_GPUS=5
 

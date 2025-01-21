@@ -9,12 +9,9 @@ from names import *
 # set font size and type
 plt.rcParams.update({'font.size': FONT_SIZE})
 plt.rcParams.update({'font.family': FONT})
-
 def smooth(ys, size=20):
     """smooths a list of values"""
     return np.array([np.mean(ys[max(0, i-size):i+size]) for i in range(len(ys))])
-
-
 
 def safe_med_min_min(values):
     """ Returns the median, min, and max of each column with the nans removed"""
@@ -42,11 +39,9 @@ def safe_med_min_min(values):
 
 
 if __name__ == "__main__":
-    algs = "LS IP AE Transformer TFE Oracle BFB BF MAML1 MAML5 Siamese Proto".split(" ")
-    algs.reverse()
-    datasets = "Polynomial CIFAR 7Scenes Ant".split(" ")
-    datasets = "CIFAR".split(" ")
-    logdir = "logs/experiment"
+    algs = "LS LS-Parallel".split(" ")
+    datasets = "Polynomial".split(" ")
+    logdir = "logs/parallel"
 
     for dataset in datasets:
         if not os.path.exists(os.path.join(logdir, dataset)):
@@ -68,7 +63,7 @@ if __name__ == "__main__":
         if len(tags) == 4:
             fig, ax = plt.subplots(1, 4, figsize=(24, 6))
         elif len(tags) == 3:
-            fig, ax = plt.subplots(1, 3, figsize=(24, 6))
+            fig, ax = plt.subplots(1, 3, figsize=(18, 6))
         axs = ax.flatten()
 
 
@@ -91,7 +86,6 @@ if __name__ == "__main__":
                     axs[i].set_ylim(maybe_lims)
                 axs[i].set_yscale("log")
 
-            # set x labels as [0, 12500 25000 37500 50000]
             axs[i].set_xticks([0, 12500, 25000, 37500, 50000])
 
             # plot each alg for each tag
@@ -110,7 +104,10 @@ if __name__ == "__main__":
                 median, min_val, max_val = smooth(median), smooth(min_val), smooth(max_val)
 
                 if title == "Type 3 Transfer":
-                    label = alg_names[alg]
+                    if alg == "LS":
+                        label = "Multi-Headed NN"
+                    else:
+                        label = "Parallel NNs"
                 else:
                     label = None
                 axs[i].plot(median, label=label, color=alg_colors[alg])
@@ -118,32 +115,15 @@ if __name__ == "__main__":
         
         # reverse label order
         handles, labels = axs[-1].get_legend_handles_labels()
-        handles, labels = handles[::-1], labels[::-1]
-
-        # make thickness of lines in legend thicker
-        # for h in handles:
-        #     h.set_linewidth(5)
 
         # plots below axs
-        if dataset == "CIFAR":
-            ncol = len(algs) // 2
-            bbox = (0.5, -0.035)
-            bottom = 0.255
-        else:
-            ncol = len(algs)
-            bbox = (0.5, -0.030)
-            bottom = 0.19
-        ncol = len(algs) // 2 if dataset == "CIFAR" else len(algs)
-        
-        leg = fig.legend(handles, labels, loc="lower center", ncol=ncol, fontsize=FONT_SIZE, frameon=False, bbox_to_anchor=bbox)
-
-        # make the legend lines thicker
+        leg = fig.legend(handles, labels, loc="lower center", ncol=len(algs), frameon=False, bbox_to_anchor=(0.5, 0.-0.03))
+                # make the legend lines thicker
         for h in leg.get_lines():
             h.set_linewidth(5)
         
-        
         plt.tight_layout()
-        plt.subplots_adjust(bottom=bottom)  # Increase bottom margin slightly for space
+        plt.subplots_adjust(bottom=0.18)  # Increase bottom margin slightly for space
         plt.savefig(os.path.join(logdir, dataset, "results.png"))
 
 

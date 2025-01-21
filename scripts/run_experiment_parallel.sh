@@ -29,7 +29,7 @@ run_experiment() {
   COUNT=$5
 
   # make a log directory
-  LOGDIR="text_logs/experiment/$DATA/$ALGO/$SEED"
+  LOGDIR="text_logs/parallel/$DATA/$ALGO/$SEED"
   mkdir -p $LOGDIR
   LOGFILE="$LOGDIR/log.txt"
 
@@ -37,7 +37,7 @@ run_experiment() {
 
   # TODO: Replace the following line with your actual experiment command
   # TODO: Ensure your command uses the specified GPU
-  python test.py --alg $ALGO --dataset $DATA --seed $SEED --device $GPU --epochs $EPOCHS --log_dir logs/experiment > $LOGFILE 2>&1
+  python test.py --alg $ALGO --dataset $DATA --seed $SEED --device $GPU --epochs $EPOCHS --log_dir logs/parallel  > $LOGFILE 2>&1
 
   # get the exit code, print a warning if bad
   EXIT_CODE=$?
@@ -84,22 +84,21 @@ manage_queue() {
   wait
 }
 
-ALGS="LS IP AE Transformer TFE Oracle BFB BF MAML1 MAML5 Siamese Proto"
-DATASETS="Polynomial CIFAR 7Scenes Ant"
+ALGS="LS-Parallel"
+DATASETS="Ant"
 EPOCHS=50000
 job_list=()
 total_count=0
 
 # Main experiments using L2 based loss
 for dataset in $DATASETS; do
-   for alg in $ALGS; do
-     for seed in {1..10}; do
-         job_list+=("$dataset $alg $seed $total_count")
-         total_count=$((total_count + 1))
-     done
-   done
+  for alg in $ALGS; do
+    for seed in {1..10}; do
+      job_list+=("$dataset $alg $seed $total_count")
+      total_count=$((total_count + 1))
+    done
+  done
 done
-
 
 # Convert job list to a format suitable for the manage_queue function
 printf "%s\n" "${job_list[@]}" | manage_queue

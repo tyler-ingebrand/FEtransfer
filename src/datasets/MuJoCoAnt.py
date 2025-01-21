@@ -139,6 +139,7 @@ class VariableAntEnv(gym.Env):
         return next_state, reward, terminated, truncated, info
 
     def render(self):
+        print("Rendering")
         return self.env.render()
 
     def close(self):
@@ -257,25 +258,61 @@ class VariableAntEnv(gym.Env):
 train_type1_parameters = {}
 default_sizes = VariableAntEnv.default_dynamics_variable_ranges()
 for k, v in default_sizes.items():
-    train_type1_parameters[k] = (v[0]*0.5, v[1]*1.5)
-    # if "length" in k:
-    #     train_type1_parameters[k] = (v[0]*0.5, v[1]*1.5)
-    # else:
-    #     train_type1_parameters[k] = (v[0]*1.0, v[1]*1.0)
+    train_type1_parameters[k] = (v[0]*0.5, v[1]*1.0)
+
 # type 2 will be linear combinations of these parameter dynamics (not the parameters themselves)
 
 # generate type3 parameter ranges
 train_type3_parameters = {}
 for k, v in default_sizes.items():
-    train_type3_parameters[k] = (v[0]*2.0, v[1]*2.5)
-    # if "length" in k:
-    #     train_type1_parameters[k] = (v[0]*2.0, v[1]*2.5)
-    # else:
-    #     train_type1_parameters[k] = (v[0]*1.0, v[1]*1.0)
+    train_type3_parameters[k] = (v[0]*1.5, v[1]*2.0)
 
 
 
 
+
+
+def collage():
+    print("Generating collage")
+    rows, cols = 3,5
+    # init plt of images, 3 rows, 5, columns
+    fig, axs = plt.subplots(rows, cols, figsize=(cols*3, rows*3))
+    
+    for row in range(3):
+        for col in range(5):
+            if col < 3:
+                hps = train_type1_parameters
+            else:
+                hps = train_type3_parameters
+            env = VariableAntEnv(hps, render_mode='rgb_array')
+            env.reset()
+            env.step(env.action_space.sample())
+            env.step(env.action_space.sample())
+            env.step(env.action_space.sample())
+            env.step(env.action_space.sample())
+            print(env)
+            image = env.render()
+            env.close()
+
+            # plot image
+            axs[row, col].imshow(image)
+            axs[row, col].axis('off')
+
+    # add "Type 1" and "Type 3" labels above the columns
+    left = axs[0, 0].get_position().xmin
+    right = axs[0, 2].get_position().xmax
+    xpos = (left + right) / 2
+    ypos = axs[0, 0].get_position().ymax + 0.08
+    fig.text(xpos, ypos, "Type 1", ha="center", va="center", fontsize=32, weight="bold")
+
+    # add one text above negative samples
+    left = axs[0, 3].get_position().xmin
+    right = axs[0, 4].get_position().xmax
+    xpos = (left + right) / 2
+    fig.text(xpos, ypos, "Type 3", ha="center", va="center", fontsize=32, weight="bold")
+
+    plt.tight_layout()
+    plt.savefig("collage.png")
 
 
 
@@ -441,7 +478,7 @@ def collect_data(force=False):
         return
 
     # gather data
-    train = collect_type1_data(num_functions=1000, params="type1")
+    train = collect_type1_data(num_functions=10000, params="type1")
     type1 = collect_type1_data(num_functions=200, params="type1") # same distribution as training, but different parameters
     type2 = collect_type2_data(num_functions=200) # synthetic data for linear transfer. Not necessarily a feasible trajectory.
     type3 = collect_type1_data(num_functions=200, params="type3") # OOD paramaters.
@@ -603,6 +640,7 @@ def plot_ant(xs, ys, y_hats, example_xs, example_ys, save_dir, type_i, info):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--visualize', action='store_true')
+    parser.add_argument('--collage', action='store_true')
     parser.add_argument('--force', action='store_true')
     args = parser.parse_args()
     vis = args.visualize
@@ -610,6 +648,11 @@ if __name__ == '__main__':
     # render the env
     if vis:
         visualize()
+
+    # generate a collage of ants
+    if args.collage:
+        collage()
+        
     # collect and save data
-    else:
+    if not vis and not args.collage:
         collect_data(args.force)

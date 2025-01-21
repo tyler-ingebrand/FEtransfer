@@ -27,15 +27,15 @@ def read_tensorboard(logdir, scalars):
 ### This is because tensorboard is slow. ###
 if __name__ == "__main__":
 
-    algs = "LS IP AE Transformer TFE Oracle BFB BF MAML1 MAML5 Siamese Proto".split(" ")
+    alg = "LS"
     datasets = "Polynomial CIFAR 7Scenes Ant".split(" ")
-    datasets = "Polynomial".split(" ")
-    logdir = "logs/experiment"
+    logdir = "logs/basis"
     tags = ["type1/accuracy", "type1/mean_distance_squared",
             "type2/accuracy", "type2/mean_distance_squared",
             "type3/accuracy", "type3/mean_distance_squared",
             "train/accuracy", "train/mean_distance_squared",]
-
+    n_basis = "1 2 3 5 10 20 40 60 80 100".split(" ")
+    n_basis = [int(n) for n in n_basis]
 
 
 
@@ -44,35 +44,34 @@ if __name__ == "__main__":
         if not os.path.exists(os.path.join(logdir, dataset)):
             print(f"Skipping {dataset} because it does not exist.")
             continue
+        # create data dict
         data = {}
+        for n_bas in n_basis:
+            data[n_bas] = {}
+        
+        # get alg dir, maybe skip
+        alg_dir = os.path.join(logdir, dataset, alg)
+        if not os.path.exists(alg_dir):
+            print(f"Skipping {alg_dir} in {dataset} because it does not exist.")
+            continue
 
-        # for all algs
-        for alg in algs:
-            data[alg] = {}
+        # get all subdirs
+        subdirs = [d for d in os.listdir(alg_dir) if os.path.isdir(os.path.join(alg_dir, d))]
+        for subdir in subdirs:
+            seed_dir = os.path.join(alg_dir, subdir)
+            seed = torch.load(os.path.join(seed_dir, "args.pth"), weights_only=False).seed
+            n = torch.load(os.path.join(seed_dir, "args.pth"), weights_only=False).n_basis
+            data[n][seed] = {}
 
-
-            # get alg dir, maybe skip
-            alg_dir = os.path.join(logdir, dataset, alg)
-            if not os.path.exists(alg_dir):
-                print(f"Skipping {alg_dir} in {dataset} because it does not exist.")
-                continue
-
-            # get all subdirs
-            subdirs = [d for d in os.listdir(alg_dir) if os.path.isdir(os.path.join(alg_dir, d))]
-            for subdir in subdirs:
-                print(f"Processing {logdir}/{dataset}/{alg}/{subdir}")
-                seed_dir = os.path.join(alg_dir, subdir)
-                seed = torch.load(os.path.join(seed_dir, "args.pth"), weights_only=False).seed
-                data[alg][seed] = {}
-
-                # get all scalars
-                for tag in tags:
-                    try:
-                        tag_data = read_tensorboard(seed_dir, [tag])
-                        data[alg][seed][tag] = np.array(tag_data[tag][:, 1])
-                    except:
-                        continue
-
+            print(f"Processing {logdir}/{dataset}/{alg}/{subdir}")
+            # get all scalars
+            for tag in tags:
+                try:
+                    tag_data = read_tensorboard(seed_dir, [tag])
+                    data[n][seed][tag] = np.array(tag_data[tag][:, 1])
+                    
+                except Exception as e:
+                    continue
         torch.save(data, os.path.join(logdir, dataset,  f"data.pth"))
         print(f"Saving to {logdir}/{dataset}/data.pth\n")
 

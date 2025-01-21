@@ -27,10 +27,9 @@ def read_tensorboard(logdir, scalars):
 ### This is because tensorboard is slow. ###
 if __name__ == "__main__":
 
-    algs = "LS IP AE Transformer TFE Oracle BFB BF MAML1 MAML5 Siamese Proto".split(" ")
-    datasets = "Polynomial CIFAR 7Scenes Ant".split(" ")
-    datasets = "Polynomial".split(" ")
-    logdir = "logs/experiment"
+    dataset = "Polynomial"
+    algs = ["LS", "LS-Parallel"]
+    logdirs = ["logs/experiment","logs/parallel"]
     tags = ["type1/accuracy", "type1/mean_distance_squared",
             "type2/accuracy", "type2/mean_distance_squared",
             "type3/accuracy", "type3/mean_distance_squared",
@@ -40,16 +39,23 @@ if __name__ == "__main__":
 
 
     # for all datasets
-    for dataset in datasets:
-        if not os.path.exists(os.path.join(logdir, dataset)):
-            print(f"Skipping {dataset} because it does not exist.")
-            continue
-        data = {}
+    if not os.path.exists(os.path.join(logdirs[0], dataset)):
+        print(f" {os.path.join(logdirs[0], dataset)} does not exist.")
+        exit()
+    if not os.path.exists(os.path.join(logdirs[1], dataset)):
+        print(f" {os.path.join(logdirs[1], dataset)} does not exist.")
+        exit()
+    data = {}
+    for alg in algs:
+        data[alg] = {}
 
-        # for all algs
+
+    for logdir in logdirs:
         for alg in algs:
-            data[alg] = {}
-
+            if alg == "LS" and logdir == "logs/parallel":
+                continue
+            if alg == "LS-Parallel" and logdir == "logs/experiment":
+                continue
 
             # get alg dir, maybe skip
             alg_dir = os.path.join(logdir, dataset, alg)
@@ -74,6 +80,6 @@ if __name__ == "__main__":
                         continue
 
         torch.save(data, os.path.join(logdir, dataset,  f"data.pth"))
-        print(f"Saving to {logdir}/{dataset}/data.pth\n")
+        print(f"Saving to {logdirs[1]}/{dataset}/data.pth\n")
 
 

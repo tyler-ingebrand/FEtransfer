@@ -19,18 +19,20 @@ alg_names = {   "LS": "FE (LS)",
                 "Proto": "ProtoTyp."
 }
 
-alg_colors = {  "LS": "#2151ff", # blue
-                "IP": "#87cbff", # other blue
-                "AE": "#06c910", # green
-                "Transformer": "#f53bff", # pink
-                "TFE": "#f00505", # red
-                "Oracle": "#f07605", # orange
-                "BFB": "#5a7a22", # forest
-                "BF": "#c4fa66", # lime
-                "MAML1": "#431347", # dark purple
-                "MAML5": "#bb8ebf", # lilac
-                "Siamese": "#4cad92", # aqua
-                "Proto": "#daff5e" # yellow
+alg_colors = {
+    "LS": "tab:blue",   
+    "IP": "tab:cyan",  
+    "AE": "tab:green",   
+    "Transformer": "tab:red",  
+    "LS-Parallel": "tab:red",  
+    "TFE": "tab:pink", 
+    "Oracle": "tab:purple", 
+    "BFB": "tab:brown",  
+    "BF": "tab:olive", 
+    "MAML1": "#ff8000", # orange 
+    "MAML5": "#ffbf00", # other orange
+    "Siamese": "slategrey",  
+    "Proto": "lightsteelblue"   
 }
 
 titles = {  "train/accuracy": "Train",
@@ -51,3 +53,30 @@ yaxis = {   "train/accuracy": "Accuracy",
             "type2/mean_distance_squared": "L2 Distance Squared",
             "type3/mean_distance_squared": "L2 Distance Squared"
 }
+
+ylims = {"Polynomial":{
+    "Train": None, # NONE = default, usually fine if there are no outliers that make the graph ugly. 
+    "Type 1 Transfer": None,
+    "Type 2 Transfer": None,
+    "Type 3 Transfer": None,
+},
+"CIFAR":{
+    "Train": None,
+    "Type 1 Transfer": None,
+    "Type 3 Transfer": None,
+},
+"7Scenes":{
+    "Train": None,
+    "Type 1 Transfer": None,
+    "Type 3 Transfer": None,
+},
+"Ant":{
+    "Train": (1e-3, 15),
+    "Type 1 Transfer": (3, 1e2),
+    "Type 2 Transfer": None,
+    "Type 3 Transfer": (40, 1e4),
+}
+}
+
+FONT_SIZE = 19
+FONT = "serif"

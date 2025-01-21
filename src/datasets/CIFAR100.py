@@ -127,7 +127,7 @@ def plot_cifar(xs, ys, y_hats, example_xs, example_ys, save_dir, type_i, info):
     left = ax[0, 10].get_position().xmin
     right = ax[0, 11].get_position().xmax
     xpos = (left + right) / 2
-    fig.text(xpos, ypos, "New Image", ha="center", va="center", fontsize=16, weight="bold")
+    fig.text(xpos, ypos, "Query Image", ha="center", va="center", fontsize=16, weight="bold")
 
     plt.savefig(f"{save_dir}/type{type_i+1}.png")
     plt.clf()

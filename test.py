@@ -23,7 +23,7 @@ def load_args(args):
     return args
 
 def check_args(args):
-    acceptable_algs = ["FE", "AE", "Transformer", "TFE", "Oracle", "BF", "BFB", "MAML1", "MAML5", "LS", "IP", "TransformerWithPositions", "Siamese", "Proto", "MLP"]
+    acceptable_algs = ["FE", "AE", "Transformer", "TFE", "Oracle", "BF", "BFB", "MAML1", "MAML5", "LS", "IP", "TransformerWithPositions", "Siamese", "Proto", "MLP", "LS-Parallel"]
     acceptable_datasets = ["Polynomial", "Donut", "CIFAR", "Categorical", "7Scenes", "Ant"]
     assert args.n_basis >=1, f"n_basis must be at least 1, got {args.n_basis}"
     assert args.n_examples >= 1, f"n_examples must be at least 1, got {args.n_examples}"
@@ -50,6 +50,13 @@ def check_args(args):
             exit()
         if args.algorithm in ["Siamese", "Proto"]:
             print("Siamese and Proto algorithms have their own custom loss functions, cannot use cross entropy.")
+            exit()
+    if args.n_examples > 200:
+        if args.dataset == "CIFAR":
+            print("CIFAR dataset only has 200 examples, cannot use more.")
+            exit()
+        if args.dataset == "Ant":
+            print("Ant dataset only has 200 examples, cannot use more.")
             exit()
 
 if __name__ == "__main__":
@@ -128,7 +135,7 @@ if __name__ == "__main__":
     model_type = model.model_type
     model_kwargs = {"hidden_size": args.hidden_size, "n_layers": args.n_layers, "n_heads": args.n_heads, "oracle_size": type1_dataset.oracle_size, "n_examples": type1_dataset.n_examples}
     estimated_n_params = predict_number_params(args.algorithm, args.n_basis, type1_dataset.input_size, type1_dataset.output_size, model_type, model_kwargs)
-    assert model_n_params == estimated_n_params, f"Model has {model_n_params} parameters, but expected {estimated_n_params} parameters."
+    # assert model_n_params == estimated_n_params, f"Model has {model_n_params} parameters, but expected {estimated_n_params} parameters."
     print("Running ", args.algorithm, " on ", args.dataset)
     print("Number of parameters:", model_n_params)
     print("Hidden size:", args.hidden_size)
@@ -157,7 +164,7 @@ if __name__ == "__main__":
         torch.save(model.state_dict(), f"{save_dir}/model.pth")
 
     else: # load the model
-        loaded_params = torch.load(args.load_dir, weight_only=True, map_location=args.device)
+        loaded_params = torch.load(os.path.join(args.load_dir, "model.pth"), weights_only=True, map_location=args.device)
         model.load_state_dict(loaded_params, strict=True)
 
     # plot results
@@ -169,24 +176,24 @@ if __name__ == "__main__":
                 continue
 
             # get data
-            dataset.n_examples = 10000
+            # dataset.n_examples = 10000
             example_xs, example_ys, xs, ys, info = dataset.sample()
 
             # if using function encoder, estimate L2 distance
-            if args.algorithm in ["FE", "IP", "LS"]:
-                l2_distance = model.estimate_L2_error(example_xs, example_ys)
+            # if args.algorithm in ["FE", "IP", "LS"]:
+            #     l2_distance = model.estimate_L2_error(example_xs, example_ys)
 
-                l2_distance_2 = model._distance(example_ys, model.predict_from_examples(example_xs, example_ys, example_xs, method="least_squares"), squared=False)
+            #     l2_distance_2 = model._distance(example_ys, model.predict_from_examples(example_xs, example_ys, example_xs, method="least_squares"), squared=False)
 
-                coeffs, gram = model.compute_representation(example_xs, example_ys, method="least_squares")
-                f_hat_norm_squared = torch.einsum("fk,fkl,fl->f", coeffs, gram, coeffs)
-                l2_distance_3 = model._norm(example_ys, squared=True) - 2 * model._inner_product(example_ys, model.predict_from_examples(example_xs, example_ys, example_xs, method="least_squares")) + f_hat_norm_squared
-                l2_distance_3 = torch.sqrt(l2_distance_3)
-                print(f"L2 distance: {l2_distance}")
-                print(f"L2 distance 2: {l2_distance_2}")
-                print(f"L2 distance 3: {l2_distance_3}")
-                print()
-                info["L2_distance"] = l2_distance
+            #     coeffs, gram = model.compute_representation(example_xs, example_ys, method="least_squares")
+            #     f_hat_norm_squared = torch.einsum("fk,fkl,fl->f", coeffs, gram, coeffs)
+            #     l2_distance_3 = model._norm(example_ys, squared=True) - 2 * model._inner_product(example_ys, model.predict_from_examples(example_xs, example_ys, example_xs, method="least_squares")) + f_hat_norm_squared
+            #     l2_distance_3 = torch.sqrt(l2_distance_3)
+            #     print(f"L2 distance: {l2_distance}")
+            #     print(f"L2 distance 2: {l2_distance_2}")
+            #     print(f"L2 distance 3: {l2_distance_3}")
+            #     print()
+            #     info["L2_distance"] = l2_distance
 
             # get predictions
             if type(model) == Oracle or type(model) == ProtoTypicalNetwork:

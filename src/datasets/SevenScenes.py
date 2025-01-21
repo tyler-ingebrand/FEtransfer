@@ -309,7 +309,7 @@ def plot_7scenes(xs, ys, y_hats, example_xs, example_ys, save_dir, type_i, info)
             img = example_xs[row, col].permute(1, 2, 0).cpu().numpy()
             ax[row, col].imshow(img)
             pos = example_ys[row, col]
-            class_name = f"x={pos[0]:.2f}, y={pos[1]:.2f}, z={pos[2]:.2f}"
+            class_name = f"GroundTruth: x={pos[0]:.2f}, y={pos[1]:.2f}, z={pos[2]:.2f}"
             ax[row, col].set_title(class_name)
 
         # evaluation data
@@ -347,7 +347,7 @@ def plot_7scenes(xs, ys, y_hats, example_xs, example_ys, save_dir, type_i, info)
     left = ax[0, 5].get_position().xmin
     right = ax[0, 8].get_position().xmax
     xpos = (left + right) / 2
-    fig.text(xpos, ypos, "Evaluations", ha="center", va="center", fontsize=32, weight="bold")
+    fig.text(xpos, ypos, "Queries", ha="center", va="center", fontsize=32, weight="bold")
 
     plt.savefig(f"{save_dir}/type{type_i + 1}.png")
     plt.clf()

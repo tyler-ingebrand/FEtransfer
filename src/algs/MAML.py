@@ -18,75 +18,6 @@ except: # this is only used if you run the main function
     from src.algs.BaseAlg import BaseAlg
     from src.algs.generic_function_space_methods import _distance
 
-def read_tensorboard(logdir, scalars):
-    """returns a dictionary of numpy arrays for each requested scalar"""
-    ea = event_accumulator.EventAccumulator(
-        logdir,
-        size_guidance={event_accumulator.SCALARS: 0},
-    )
-    _absorb_print = ea.Reload()
-    # make sure the scalars are in the event accumulator tags
-    for s in scalars:
-        assert s in ea.Tags()["scalars"], f"{s} not found in event accumulator"
-    data = {k: np.array([[e.step, e.value] for e in ea.Scalars(k)]) for k in scalars}
-    return data
-
-
-def parse_maml_internal_lr_tensorboards():
-    logdir = "./logs_param_sweep"
-    assert os.path.exists(logdir), f"{logdir} does not exist. Run './maml_parameter_sweep.sh'"
-    datasets = ["Polynomial", "CIFAR", "7Scenes", "Ant"]
-    algs = ["MAML1", "MAML5"]
-    scalars = ["type1/mean_distance_squared", "type2/mean_distance_squared", "type3/mean_distance_squared"]
-    data = {}
-    for dataset in datasets:
-        data[dataset] = {}
-        for alg in algs:
-            data[dataset][alg] = {}
-            rundir = f"{logdir}/{dataset}/{alg}"
-            for run in os.listdir(rundir):
-                # get performance
-                filedir = f"{rundir}/{run}"
-                print("Reading ", filedir)
-                data[dataset][alg][run] = {}
-                for s in scalars:
-                    try:
-                        tb_results = read_tensorboard(filedir, [s])
-                        data[dataset][alg][run][s] = tb_results[s][-10:][:, 1].mean()
-                    except:
-                        continue
-
-                # get internal lr from args
-                args = torch.load(f"{filedir}/args.pth", weights_only=False)
-                interal_lr = args.maml_internal_learning_rate
-                data[dataset][alg][run]["internal_lr"] = interal_lr
-
-    # now go through and print the best internal learning rates
-    for dataset in datasets:
-        for alg in algs:
-            lr, mean_distance_squared = [], []
-            failed=False
-            for run in data[dataset][alg]:
-                lr.append(data[dataset][alg][run]["internal_lr"])
-                if "type1/mean_distance_squared" not in data[dataset][alg][run]:
-                    failed=True
-                    print("Dataset: ", dataset, "Alg: ", alg, " fails due to insufficient memory. MAML can be memory intensive. ")
-                    break
-                mean_distance_squared.append(data[dataset][alg][run]["type3/mean_distance_squared"])
-            if failed:
-                continue
-            # convert nan to inf
-            mean_distance_squared = [np.inf if np.isnan(x) else x for x in mean_distance_squared]
-
-            # find best run
-            best_run = np.argmin(mean_distance_squared)
-            print(f"Dataset: {dataset}, Alg: {alg}, internal lr: {lr[best_run]}, mean_distance_squared: {mean_distance_squared[best_run]}")
-
-
-if __name__ == "__main__":
-    # add src to path, 2 back from filedir
-    parse_maml_internal_lr_tensorboards()
-
 
 # These are empirically good values for MAML. Unfortunately, this means we had to tune
 # MAML, in contrast to all other algorithms.
@@ -101,10 +32,10 @@ MAML_INTERNAL_LEARNING_RATE = {
        },
     "MAML5":
         {
-            "PolynomialDataset": 5e-05,
+            "PolynomialDataset": 1e-05,
             "ModifiedCIFAR": 0.0005,
             "SevenScenesDataset": 1e-4,
-            "MujoCoAntDataset": 0.005,
+            "MujoCoAntDataset": 0.0005,
         },
 }
 

@@ -20,6 +20,8 @@ def predict_number_params(alg:str, n_basis:int, input_size:tuple[int], output_si
     num_params = 0
     if alg in ["FE", "LS", "IP"]:
         num_params = FunctionEncoder.predict_number_params(input_size, output_size, n_basis, model_type, model_kwargs, use_residuals_method=False )
+    elif alg == "LS-Parallel":
+        num_params = FunctionEncoder.predict_number_params(input_size, output_size, n_basis, "ParallelMLP", model_kwargs, use_residuals_method=False )
     elif alg == "AE":
         num_params = AutoEncoder.predict_number_params(input_size, output_size, n_basis, model_type, model_kwargs)
     elif alg == "Transformer":
@@ -125,6 +127,19 @@ def get_model(alg:str, train_dataset:BaseDataset, n_basis:int, n_layers:int, n_h
                                optimizer=opti,
                                optimizer_kwargs=kwargs
                                ).to(device)
+    elif alg == "LS-Parallel":
+        return FunctionEncoder(input_size=train_dataset.input_size,
+                        output_size=train_dataset.output_size,
+                        data_type=train_dataset.data_type,
+                        model_type="ParallelMLP",
+                        n_basis=n_basis,
+                        model_kwargs={"hidden_size": hidden_size, "n_layers": n_layers},
+                        use_residuals_method=False,
+                        method="least_squares",
+                        gradient_accumulation=gradient_accumulation,
+                        optimizer=opti,
+                        optimizer_kwargs=kwargs
+                        ).to(device)
     elif alg == "IP":
         return FunctionEncoder(input_size=train_dataset.input_size,
                                output_size=train_dataset.output_size,
