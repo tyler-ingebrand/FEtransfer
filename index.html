@@ -147,8 +147,12 @@
       <div class="column is-four-fifths">
         <div class="content has-text-justified">
           <img src="static/images/ICML2025_cover_no_background.png" alt="An illustration of the three types of transfer. Type 1 transfer is within the convex hull of the training functions. Type 2 transfer is extrapolation to the linear span. Type 3 transfer is extrapolation to the rest of the Hilbert space. "/>
-          <p style="margin-bottom: 1px;">
-            We consider an inductive transfer setting and present a geometric characterization of inductive transfer using principles from functional analysis. Inductive transfer involves transferring knowledge to new, unseen tasks while keeping the data distribution the same. For instance, labeling images according to a new, previously unknown class, where only a few examples are provided after training. While prior works have studied transfer learning, gaps remain in identifying when learned models will succeed and when they will fail. We introduce a characterization of inductive transfer, based on Hilbert spaces, which will provide intuition about the difficulty of a given transfer learning problem.
+          <p style="margin-bottom: 5px;">
+            We consider an inductive transfer setting and present a geometric characterization of inductive transfer using principles from functional analysis.
+            Inductive transfer involves transferring knowledge to new, unseen tasks while keeping the data distribution the same.
+            For instance, labeling images according to a new, previously unknown class, where only a few examples are provided after training.
+            While prior works have studied transfer learning, gaps remain in identifying when learned models will succeed and when they will fail.
+            We introduce a characterization of inductive transfer, based on Hilbert spaces, which will provide intuition about the difficulty of a given transfer learning problem.
           </p >
           <p style="margin-bottom: 1px;">
             Specifically, we characterize transfer using three types:
@@ -170,28 +174,28 @@
   <!-- video -->
 <section class="hero is-small ">
   <div class="hero-body">
-    <div class="container">
-      <!-- Paper video. -->
+    <div class="columns is-centered has-text-centered">
       <h2 class="title is-3">The Function Encoder</h2>
-      <div class="columns is-centered has-text-centered">
         <div class="column is-four-fifths">
           <img src="static/images/function_encoder.gif" width="100%"
                alt="A video of learned basis functions converging to span the space of quadratic functions."/>
-          <p>
-            Given a geometric characterization of transfer based on Hilbert spaces, a natural solution is basis functions.
-            We build upon the function encoder algorithm, a method for learning neural network basis functions to span an arbitrary function space.
-            While analytical approaches such as Fourier series scale poorly with the dimensionality of the input and output spaces, function encoders scale extremely well due to the use of neural networks.
-          </p>
-          <p>
-            We make several improvements to the function encoder algorithm.
-            First, we generalize all definitions to use inner products only, allowing the function encoder to work on any Hilbert space.
-            This generalization allows us to tackle new problems, such as few-shot classification.
-            Second, we introduce a novel training scheme for function encoders using least-squares optimization. This training scheme greatly improves convergence rate and accuracy.
-            Lastly, we prove a universal function space approximation theorem for function encoders, showing that they can approximate any function in a separable Hilbert space to any desired accuracy.
-          </p>
+           <div class="content has-text-justified">
+            <p>
+
+              Given a geometric characterization of transfer based on Hilbert spaces, a natural solution is basis functions.
+              We build upon the function encoder algorithm, a method for learning neural network basis functions to span an arbitrary function space.
+              While analytical approaches such as Fourier series scale poorly with the dimensionality of the input and output spaces, function encoders scale extremely well due to the use of neural networks.
+            </p>
+            <p>
+              We make several improvements to the function encoder algorithm.
+              First, we generalize all definitions to use inner products only, allowing the function encoder to work on any Hilbert space.
+              This generalization allows us to tackle new problems, such as few-shot classification.
+              Second, we introduce a novel training scheme for function encoders using least-squares optimization. This training scheme greatly improves convergence rate and accuracy.
+              Lastly, we prove a universal function space approximation theorem for function encoders, showing that they can approximate any function in a separable Hilbert space to any desired accuracy.
+            </p>
+           </div>
         </div>
       </div>
-    </div>
   </div>
 </section>
 
