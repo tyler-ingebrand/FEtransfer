@@ -129,7 +129,7 @@
       <div class="column is-four-fifths">
         <h2 class="title is-3">Abstract</h2>
         <div class="content has-text-justified">
-          <p style="margin-bottom: 20px;">
+          <p style="margin-bottom: 40px;">
             A central challenge in transfer learning is designing algorithms that can quickly adapt and generalize to new tasks without retraining. Yet, the conditions of when and how algorithms can effectively transfer to new tasks is poorly characterized. We introduce a geometric characterization of transfer in Hilbert spaces and define three types of inductive transfer: interpolation within the convex hull, extrapolation to the linear span, and extrapolation outside the span. We propose a method grounded in the theory of function encoders to achieve all three types of transfer. Specifically, we introduce a novel training scheme for function encoders using least-squares optimization, prove a universal approximation theorem for function encoders, and provide a comprehensive comparison with existing approaches such as transformers and meta-learning on four diverse benchmarks. Our experiments demonstrate that the function encoder outperforms state-of-the-art methods on four benchmark tasks and on all three types of transfer.
             <br>
           </p>
@@ -149,13 +149,14 @@
           <img src="static/images/ICML2025_cover_no_background.png" alt="An illustration of the three types of transfer. Type 1 transfer is within the convex hull of the training functions. Type 2 transfer is extrapolation to the linear span. Type 3 transfer is extrapolation to the rest of the Hilbert space. "/>
           <p>
             We consider an inductive transfer setting and present a geometric characterization of inductive transfer using principles from functional analysis. Inductive transfer involves transferring knowledge to new, unseen tasks while keeping the data distribution the same. For instance, labeling images according to a new, previously unknown class, where only a few examples are provided after training. While prior works have studied transfer learning, gaps remain in identifying when learned models will succeed and when they will fail. We introduce a characterization of inductive transfer, based on Hilbert spaces, which will provide intuition about the difficulty of a given transfer learning problem.
+            <br>
             Specifically, we characterize transfer using three types:
             <br>
-            <p style="margin-left: 20px;margin-bottom: 10px;"><strong>(Type 1) Interpolation within the convex hull.</strong> Tasks that can be represented as a convex combination of observed source tasks. </p>
+            <p style="margin-left: 20px;margin-bottom: 1px;"><strong>(Type 1) Interpolation within the convex hull.</strong> Tasks that can be represented as a convex combination of observed source tasks. </p>
             <br>
-            <p style="margin-left: 20px;margin-bottom: 10px;"><strong>(Type 2) Extrapolation to the linear span.</strong> Tasks that are in the linear span of source tasks, which may lie far from observed data but share meaningful features. </p>
+            <p style="margin-left: 20px;margin-bottom: 1px;"><strong>(Type 2) Extrapolation to the linear span.</strong> Tasks that are in the linear span of source tasks, which may lie far from observed data but share meaningful features. </p>
             <br>
-            <p style="margin-left: 20px;margin-bottom: 10px;"><strong>(Type 3) Extrapolation to the Hilbert space.</strong> Tasks that are outside the linear span of the source predictors in an infinite-dimensional function space. Type 3 transfer is the most important and challenging form of transfer. </p>
+            <p style="margin-left: 20px;margin-bottom: 15px;"><strong>(Type 3) Extrapolation to the Hilbert space.</strong> Tasks that are outside the linear span of the source predictors in an infinite-dimensional function space. Type 3 transfer is the most important and challenging form of transfer. </p>
           </p>
         </div>
       </div>
