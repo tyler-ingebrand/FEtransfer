@@ -209,46 +209,44 @@
     <div class="container">
       <h2 class="title is-3 has-text-centered">Experimental Results</h2>
       <div id="results-carousel" class="carousel results-carousel">
-
-
         <div class="item">
-        <img src="static/images/canonical (1)_no_background.png" alt="An illustration of a function encoder with 100 basis functions approximating a type 3 transfer funciton."/>
-        <div class="columns is-centered has-text-centered">
-          <div class="column is-four-fifths">
-            <strong>Qualitative Analysis of Transfer on the Polynomial Dataset.</strong>
-            In this illustrative example, we visualize the function encoder and one baseline, the auto encoder, on each of the three types of transfer.
-            We observe that both approaches achieve reasonable performance for type 1 transfer.
-            For type 2 transfer, the target function is much larger in magnitude than any function in the training set.
-            The auto encoder fails at this function because it has only learned to output functions from the training function space.
-            In contrast, the function encoder generalizes to the entire span of the training function space by design.
-            For type 3 transfer, the target function is a cubic function.
-            The auto encoder nonetheless outputs a function that is similar to the ones seen during training.
-            When using a function encoder with only three basis functions, the basis functions only span the three-dimensional space of quadratic functions, and so its approximation is the best quadratic to fit the data.
-            When using 100 basis functions, the basis functions spans the space of quadratics, but additionally have 97 unconstrained dimensions.
-            Due to the use of least squares, the function encoder with 100 basis functions optimally uses these extra 97 dimensions to fit the new function.
-            Therefore, it is able to reasonable approximate this function as well, despite having never seen a cubic function during training.
+          <img src="static/images/canonical (1)_no_background.png" alt="An illustration of a function encoder with 100 basis functions approximating a type 3 transfer funciton."/>
+          <div class="columns is-centered has-text-centered">
+            <div class="column is-four-fifths">
+              <strong>Qualitative Analysis of Transfer on the Polynomial Dataset.</strong>
+              In this illustrative example, we visualize the function encoder and one baseline, the auto encoder, on each of the three types of transfer.
+              We observe that both approaches achieve reasonable performance for type 1 transfer.
+              For type 2 transfer, the target function is much larger in magnitude than any function in the training set.
+              The auto encoder fails at this function because it has only learned to output functions from the training function space.
+              In contrast, the function encoder generalizes to the entire span of the training function space by design.
+              For type 3 transfer, the target function is a cubic function.
+              The auto encoder nonetheless outputs a function that is similar to the ones seen during training.
+              When using a function encoder with only three basis functions, the basis functions only span the three-dimensional space of quadratic functions, and so its approximation is the best quadratic to fit the data.
+              When using 100 basis functions, the basis functions spans the space of quadratics, but additionally have 97 unconstrained dimensions.
+              Due to the use of least squares, the function encoder with 100 basis functions optimally uses these extra 97 dimensions to fit the new function.
+              Therefore, it is able to reasonable approximate this function as well, despite having never seen a cubic function during training.
+            </div>
           </div>
         </div>
-      </div>
-      <div class="item">
-        <img src="static/images/poly (1)_no_background.png" alt="The training curves for all baselines on the polynomial dataset. The function encoder outperforms all baselines by orders of magnitude. "/>
+        <div class="item">
+          <img src="static/images/poly (1)_no_background.png" alt="The training curves for all baselines on the polynomial dataset. The function encoder outperforms all baselines by orders of magnitude. "/>
+          <p class="subtitle has-text-justified">
+           <strong>Empirical Results on the Polynomial Dataset.</strong>
+            While many approaches demonstrate moderate type 1 transfer, only the function encoder successfully achieves all three types,
+            as illustrated by its orders of magnitude advantage over other approaches.
+         </p>
+       </div>
+       <div class="item">
+        <!-- Your image here -->
+        <img src="static/images/cifar (1)_no_background.png" alt="The training curves for all baselines on the CIFAR dataset. The function encoder outperforms all baselines, including ad-hoc approaches such as Siamese networks."/>
         <h2 class="subtitle has-text-justified">
-         <strong>Empirical Results on the Polynomial Dataset.</strong>
-          While many approaches demonstrate moderate type 1 transfer, only the function encoder successfully achieves all three types,
-          as illustrated by its orders of magnitude advantage over other approaches.
-       </h2>
-     </div>
-     <div class="item">
-      <!-- Your image here -->
-      <img src="static/images/cifar (1)_no_background.png" alt="The training curves for all baselines on the CIFAR dataset. The function encoder outperforms all baselines, including ad-hoc approaches such as Siamese networks."/>
-      <h2 class="subtitle has-text-justified">
-        <strong>Empirical Results on the CIFAR Dataset.</strong>
-        The training curves show the two ad-hoc baselines seem to be performing best, and many algorithms fail to converge on all or some seeds.
-        However, when measuring type 1 transfer, the function encoder performs best, achieving slightly better performance than Siamese networks.
-        For type 3 transfer, few-shot classification of unseen classes, the function encoder again performs best, albeit similar to Siamese networks.
-        The key idea is that function encoders are performing comparably to ad-hoc approaches despite being designed for a more general setting.
-      </h2>
-    </div>
+          <strong>Empirical Results on the CIFAR Dataset.</strong>
+          The training curves show the two ad-hoc baselines seem to be performing best, and many algorithms fail to converge on all or some seeds.
+          However, when measuring type 1 transfer, the function encoder performs best, achieving slightly better performance than Siamese networks.
+          For type 3 transfer, few-shot classification of unseen classes, the function encoder again performs best, albeit similar to Siamese networks.
+          The key idea is that function encoders are performing comparably to ad-hoc approaches despite being designed for a more general setting.
+        </h2>
+      </div>
   </div>
 </div>
 </div>
