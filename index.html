@@ -209,10 +209,11 @@
     <div class="container">
       <h2 class="title is-3 has-text-centered">Experimental Results</h2>
       <div id="results-carousel" class="carousel results-carousel">
-       <div class="item">
-        <!-- Your image here -->
+
+
+        <div class="item">
         <img src="static/images/canonical (1)_no_background.png" alt="An illustration of a function encoder with 100 basis functions approximating a type 3 transfer funciton."/>
-        <h2 class="subtitle has-text-centered">
+        <h2 class="subtitle has-text-justified">
           <strong>Qualitative Analysis of Transfer on the Polynomial Dataset.</strong>
             In this illustrative example, we visualize the function encoder and one baseline, the auto encoder, on each of the three types of transfer.
             We observe that both approaches achieve reasonable performance for type 1 transfer.
@@ -228,24 +229,22 @@
         </h2>
       </div>
       <div class="item">
-        <!-- Your image here -->
-        <img src="static/images/carousel2.jpg" alt="MY ALT TEXT"/>
-        <h2 class="subtitle has-text-centered">
-          Second image description.
-        </h2>
-      </div>
-      <div class="item">
-        <!-- Your image here -->
-        <img src="static/images/carousel3.jpg" alt="MY ALT TEXT"/>
-        <h2 class="subtitle has-text-centered">
-         Third image description.
+        <img src="static/images/poly (1)_no_background.png" alt="The training curves for all baselines on the polynomial dataset. The function encoder outperforms all baselines by orders of magnitude. "/>
+        <h2 class="subtitle has-text-justified">
+         <strong>Empirical Results on the Polynomial Dataset.</strong>
+          While many approaches demonstrate moderate type 1 transfer, only the function encoder successfully achieves all three types,
+          as illustrated by its orders of magnitude advantage over other approaches.
        </h2>
      </div>
      <div class="item">
       <!-- Your image here -->
-      <img src="static/images/carousel4.jpg" alt="MY ALT TEXT"/>
-      <h2 class="subtitle has-text-centered">
-        Fourth image description.
+      <img src="static/images/cifar (1)_no_background.png" alt="The training curves for all baselines on the CIFAR dataset. The function encoder outperforms all baselines, including ad-hoc approaches such as Siamese networks."/>
+      <h2 class="subtitle has-text-justified">
+        <strong>Empirical Results on the CIFAR Dataset.</strong>
+        The training curves show the two ad-hoc baselines seem to be performing best, and many algorithms fail to converge on all or some seeds.
+        However, when measuring type 1 transfer, the function encoder performs best, achieving slightly better performance than Siamese networks.
+        For type 3 transfer, few-shot classification of unseen classes, the function encoder again performs best, albeit similar to Siamese networks.
+        The key idea is that function encoders are performing comparably to ad-hoc approaches despite being designed for a more general setting.
       </h2>
     </div>
   </div>
