@@ -5,7 +5,20 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e681ab0e-86d2-4420-bd4b-8f4c3789927d" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/static/images/7scenes-data-image (1).png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/static/images/ant (1)_no_background.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/static/images/canonical (1)_no_background.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/static/images/cifar (1)_no_background.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/static/images/cifar-data-example (1).png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/static/images/collage.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/static/images/poly (1)_no_background.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/static/images/seven (1)_no_background.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/images/carousel1.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/images/carousel2.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/images/carousel3.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/images/carousel4.jpg" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -30,7 +43,7 @@
     "Python.test.executor": "Debug",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "main",
-    "last_opened_file_path": "/home/tyleringebrand/Projects/tyler-ingebrand.github.io",
+    "last_opened_file_path": "/home/tyleringebrand/Projects/TransferLearningAIStats/static/images",
     "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
   }
 }]]></component>
