@@ -75,7 +75,7 @@
                   </div>
 
                   <div class="is-size-5 publication-authors">
-                    <span class="author-block">The University of Texas at Austin<br>Under Review</span>
+                    <span class="author-block">The University of Texas at Austin<br>ICML 2025</span>
                   </div>
 
                   <div class="column has-text-centered">
@@ -207,93 +207,147 @@
 </section>
 
 
-
+<!--   <div class="container is-max-desktop">-->
+<!--    <div class="columns is-centered has-text-centered">-->
+<!--      <div class="column is-four-fifths">-->
+<!--<div class="content has-text-justified">-->
 <!-- Image carousel -->
+
+
 <section class="hero is-small is-light">
-   <div class="columns is-centered has-text-centered">
-     <div class="hero-body">
-      <div class="container">
-        <h2 class="title is-3 has-text-centered">Experimental Results</h2>
-        <div id="results-carousel" class="carousel results-carousel">
+    <div class="container is-max-desktop">
+        <div class="columns is-centered has-text-centered">
+            <div class="column is-four-fifths">
+                <div class="content has-text-justified" >
+                    <h2 class="title is-3 has-text-centered" style="margin-top: 10px;">Experimental Results</h2>
+
+                    <div class="content has-text-justified">
+                    We compare function encoders against state-of-the-art transfer learning algorithms on four different datasets.
+                    The first is simple polynomial regression, and this example is designed to highlight the failure modes of other approaches.
+                    The other three datasets are more challenging: Few-shot image classification for CIFAR, Pose estimation on the seven scenes dataset, and dynamics prediction for a MuJoCo ant.
+                    For each dataset, we also separately evaluate each type of transfer, and we show that the function encoder outperforms prior works, such as transformers, meta learning, and auto-encoders,  on all three types of transfer.
+                    </div>
+
+                    <h3 class="subtitle is-5 "> An Illustrative Polynomial Example</h3>
+
+                    <div class="content has-text-justified">
+                      In this example, the algorithms estimate a polynomial function from a few data points. The training set consists of quadratic functions.
+                      Type 1 transfer are function sampled from the same distribution as the training set.
+                      Type 2 transfer are functions that are much larger in magnitude then anything in the training set, but still quadratic.
+                      Type 3 transfer is cubic functions.
+                      To illustrate this, we provide a simple qualitative example comparing the function encoder against auto-encoders.
+                    </div>
+
+                    <img src="static/images/canonical (1)_no_background.png" alt="An illustration of a function encoder with 100 basis functions approximating a type 3 transfer funciton."/>
+
+                    <div class="content has-text-justified">
+                       We observe that both approaches achieve reasonable performance for type 1 transfer.
+                       For type 2 transfer, the target function is much larger in magnitude than any function in the training set.
+                       The auto encoder fails at this function because it has only learned to output functions from the training function space.
+                       In contrast, the function encoder generalizes to the entire span of the training function space by design.
+                       For type 3 transfer, the target function is a cubic function.
+                       The auto encoder nonetheless outputs a function that is similar to the ones seen during training.
+                       When using a function encoder with only three basis functions, the basis functions only span the three-dimensional space of quadratic functions, and so its approximation is the best quadratic to fit the data.
+                       When using 100 basis functions, the basis functions spans the space of quadratics, but additionally have 97 unconstrained dimensions.
+                       Due to the use of least squares, the function encoder with 100 basis functions optimally uses these extra 97 dimensions to fit the new function.
+                       Therefore, it is able to reasonable approximate this function as well, despite having never seen a cubic function during training.
+
+                       The quantitative results are shown here:
+                    </div>
+
+                    <img src="static/images/poly (1)_no_background.png" alt="The training curves for all baselines on the polynomial dataset. The function encoder outperforms all baselines by orders of magnitude. "/>
+
+                    <div class="content has-text-justified" style="margin-top: 10px;">
+                       All prior works such as meta-learning and transformers fail on type 2 and type 3 transfer, even for a simple 1-dimensional polynomial regression problem.
+                    </div>
+
+                    <h3 class="subtitle is-5 "> Few-Shot Image Classification</h3>
+
+                    <div class="content has-text-justified">
+                      Due to the broad applicability of Hilbert spaces, we can apply the function encoder to many settings.
+                      To highlight this, we apply it to the few-shot image classification problem on the CIFAR dataset.
+                      In this setting, the model is given some positive examples showing what the class looks like. It is also given some negative examples of images belonging to other classes.
+                      Then, for any new class, the model should predict if the specified class is present in the image.
+                    </div>
+
+                    <img src="static/images/FewShotImageClass.png" alt="A visualization of the few-shot image classification problem. Some positive examples of a desired class are provided, along with some negative examples of other classes. The model should be able to identify the class for any new image.  "/>
 
 
-          <div class="item">
-          <img src="static/images/canonical (1)_no_background.png" alt="An illustration of a function encoder with 100 basis functions approximating a type 3 transfer funciton."/>
-          <h2 class="subtitle has-text-justified">
-            <strong>Qualitative Analysis of Transfer on the Polynomial Dataset.</strong>
-              In this illustrative example, we visualize the function encoder and one baseline, the auto encoder, on each of the three types of transfer.
-              We observe that both approaches achieve reasonable performance for type 1 transfer.
-              For type 2 transfer, the target function is much larger in magnitude than any function in the training set.
-              The auto encoder fails at this function because it has only learned to output functions from the training function space.
-              In contrast, the function encoder generalizes to the entire span of the training function space by design.
-              For type 3 transfer, the target function is a cubic function.
-              The auto encoder nonetheless outputs a function that is similar to the ones seen during training.
-              When using a function encoder with only three basis functions, the basis functions only span the three-dimensional space of quadratic functions, and so its approximation is the best quadratic to fit the data.
-              When using 100 basis functions, the basis functions spans the space of quadratics, but additionally have 97 unconstrained dimensions.
-              Due to the use of least squares, the function encoder with 100 basis functions optimally uses these extra 97 dimensions to fit the new function.
-              Therefore, it is able to reasonable approximate this function as well, despite having never seen a cubic function during training.
-          </h2>
+                    <div class="content has-text-justified" style="margin-top: 10px;">
+                      We use 90 of the 100 classes for training. Type 1 transfer consists of unseen images from these 90 classes.
+                      Type 2 transfer is not easily testable, but would consists of images that belong to two classes at once.
+                      Type 3 transfer is the 10, unseen classes.
+                      The training results are shown below:
+                    </div>
+
+                    <img src="static/images/cifar (1)_no_background.png" alt="The training curves for all baselines on the CIFAR dataset. The function encoder outperforms all baselines, including ad-hoc approaches such as Siamese networks."/>
+
+                    <div class="content has-text-justified" style="margin-top: 10px;">
+                      In addition to the typical baselines, we also compare against Siamese networks. The results show that function encoders perform
+                      even better than Siamese networks on this problem, despite the fact that Siamese networks are designed explicitly for this setting.
+                      All other approaches perform poorly, which highlights the difficulty of this problem.
+                    </div>
+
+                    <h3 class="subtitle is-5"> Pose Estimation</h3>
+
+                    <div class="content has-text-justified" style="margin-top: 10px;">
+                      Another interesting problem that can be expressed as a Hilbert space is pose estimation.
+                      The model is provided with a set of images and the location of the camera when these images were taken.
+                      Then, for any new image, the model should predict the location of the camera.
+                    </div>
+
+                    <img src="static/images/PoseEstim.png" alt="The model is provided with a set of images and their locations. For any new image, it should estimate the location of the camera. "/>
+
+                    <div class="content has-text-justified" style="margin-top: 10px;">
+                      We use the 7 scenes dataset, which consists of 7 different scenes. The model is trained on 6 of these scenes. Unseen images from these 6 scenes are
+                      used for type 1 transfer. Type 2 transfer would consist of shifting the origin or scaling the units. The seventh scene is used for type 3 transfer.
+                    </div>
+
+                    <img src="static/images/seven (1)_no_background.png" alt="The training curves for all baselines on the 7 Scenes dataset. The function encoder outperforms all baselines."/>
+
+                    <div class="content has-text-justified" style="margin-top: 10px;">
+                    Many approaches converge during training. As expected, all approaches perform much worse at type 1 transfer, indicating a degree of over-fitting. The function encoder performs best at both type 1 and type 3 transfer, indicating its ability to optimally use the learned features for unseen data.
+                    </div>
+
+                    <h3 class="subtitle is-5"> Hidden-Parameter Dynamics Estimation for MuJoCo</h3>
+
+                    <div class="content has-text-justified" style="margin-top: 10px;">
+                      Lastly, we run experiments on a hidden-parameter version of the MuJoCo Ant. The algorithm is given data
+                      from the beginning of a trajectory, and it must estimate the dynamics going forward. The training dataset consists of small robots.
+                      Type 1 transfer consists of robots sampled from the same hidden-parameter distribution as training. Type 2 transfer is evaluated via
+                      synthetically generated data consisting of the linear combination of the dynamics present in type 1. Type 3 transfer are robots that are much larger in size than the training set.
+                      We visualize these robots below:
+
+                    </div>
+
+                    <img src="static/images/collage (1).png" alt="Type 1 transfer consists of small, 4 legged robots. Type 3 transfer consists of very large, 4 legged robots."/>
+                    <img src="static/images/ant (1)_no_background.png" alt="The training curves for all baselines on the ant dataset. The function encoder outperforms all baselines."/>
+
+                    <div class="content has-text-justified" style="margin-top: 10px; margin-bottom: 15px;">
+                      All algorithms demonstrate convergence during training, albeit to various levels. However, many algorithms perform much worse for type 1 transfer.
+                      The function encoder performs best, although many approaches, such as the transformer and MAML(n=5), are comparable.
+                      Furthermore, the function encoder is clearly best for type 2 transfer. Type 3 transfer tells an interesting story.
+                      The function encoder has the best stable performance, although approaches such as the transformer and the auto encoder are not far behind.
+                      At the beginning of training, the auto encoder shows the best overall performance, although it degrades as training continues.
+                      This is because training is not optimizing for type 3 transfer, and the best model parameters for the training dataset are not the best model parameters for type 3 transfer.
+                      Thus, its performance is unstable.
+                    </div>
+                </div>
+            </div>
         </div>
-
-
-
-        <div class="item">
-          <img src="static/images/poly (1)_no_background.png" alt="The training curves for all baselines on the polynomial dataset. The function encoder outperforms all baselines by orders of magnitude. "/>
-          <h2 class="subtitle has-text-justified">
-           <strong>Empirical Results on the Polynomial Dataset.</strong>
-            While many approaches demonstrate moderate type 1 transfer, only the function encoder successfully achieves all three types,
-            as illustrated by its orders of magnitude advantage over other approaches.
-         </h2>
-       </div>
-
-
-
-       <div class="item">
-        <!-- Your image here -->
-        <img src="static/images/cifar (1)_no_background.png" alt="The training curves for all baselines on the CIFAR dataset. The function encoder outperforms all baselines, including ad-hoc approaches such as Siamese networks."/>
-        <h2 class="subtitle has-text-justified">
-          <strong>Empirical Results on the CIFAR Dataset.</strong>
-          The training curves show the two ad-hoc baselines seem to be performing best, and many algorithms fail to converge on all or some seeds.
-          However, when measuring type 1 transfer, the function encoder performs best, achieving slightly better performance than Siamese networks.
-          For type 3 transfer, few-shot classification of unseen classes, the function encoder again performs best, albeit similar to Siamese networks.
-          The key idea is that function encoders are performing comparably to ad-hoc approaches despite being designed for a more general setting.
-        </h2>
-      </div>
-
-
-
-      <div class="item">
-      <!-- Your image here -->
-      <img src="static/images/seven (1)_no_background.png" alt="The training curves for all baselines on the 7 Scenes dataset. The function encoder outperforms all baselines."/>
-      <h2 class="subtitle has-text-justified">
-        <strong>Empirical Results on the 7-Scenes Dataset.</strong>
-        Many approaches converge during training. As expected, all approaches perform much worse at type 1 transfer, indicating a degree of over-fitting. The function encoder performs best at both type 1 and type 3 transfer, indicating its ability to optimally use the learned features for unseen data.
-      </h2>
-      </div>
-
-
-      <div class="item">
-      <!-- Your image here -->
-      <img src="static/images/ant (1)_no_background.png" alt="The training curves for all baselines on the 7 Scenes dataset. The function encoder outperforms all baselines."/>
-      <h2 class="subtitle has-text-justified">
-        <strong>Empirical Results on the Ant Dataset.</strong>
-        All algorithms demonstrate convergence during training, albeit to various levels. However, many algorithms perform much worse for type 1 transfer.
-        The function encoder performs best, although many approaches, such as the transformer and MAML(n=5), are comparable.
-        Furthermore, the function encoder is clearly best for type 2 transfer. Type 3 transfer tells an interesting story.
-        The function encoder has the best stable performance, although approaches such as the transformer and the auto encoder are not far behind.
-        At the beginning of training, the auto encoder shows the best overall performance, although it degrades as training continues.
-        This is because training is not optimizing for type 3 transfer, and the best model parameters for the training dataset are not the best model parameters for type 3 transfer.
-        Thus, its performance is unstable.
-      </h2>
-      </div>
-
-
-
     </div>
-  </div>
-</div>
-</div>
 </section>
+
+
+
+
+
+
+
+
+
+
+
 <!-- End image carousel -->
 
 
@@ -308,6 +362,7 @@
                   Ufuk Topcu},
   title        = {Function Encoders: A Principled Approach to Transfer Learning in Hilbert Spaces},
   year         = {2025}
+  journal      = {International Conference on Machine Learning (ICML)},
 }</code></pre>
     </div>
 </section>
