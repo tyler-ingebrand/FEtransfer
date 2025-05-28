@@ -4,10 +4,11 @@ Please see the [project page](https://tyler-ingebrand.github.io/FEtransfer/) for
 
 In this project we compare function encoders against SOTA baselines such as meta learning and transformers. This repo includes the four datasets in the paper, along with the baselines. The function encoder algorithm code is in a pip package [FunctionEncoder](https://github.com/tyler-ingebrand/FunctionEncoder). If this work, or function encoders more generally, are used in your work, please cite:
 ```
-@article{ingebrand_2025_fe_transfer,
+@inproceedings{ingebrand_2025_fe_transfer,
   author       = {Tyler Ingebrand and
                   Adam J. Thorpe and
                   Ufuk Topcu},
+  booktitle   = {{ICML}},
   title        = {Function Encoders: A Principled Approach to Transfer Learning in Hilbert Spaces},
   year         = {2025}
 }
